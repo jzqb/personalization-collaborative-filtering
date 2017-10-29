@@ -1,0 +1,195 @@
+---
+title: "Jokes Recommendation"
+subtitle: |
+  Columbia University
+  
+  IEOR 4571 - Personalization Theory and Applications
+author: "Gaurav Singh, Carolyn Silverman, Cindy Wu, Maura Fitzerald"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: paper
+    toc: true
+---
+<style type="text/css">
+body {
+text-align: justify;
+font-size: 12pt;
+max-width: 1200px;
+margin-left: 100px;
+margin-right: 100px;
+}
+body .main-container {
+max-width: 1200px;
+font-size: 12pt;
+}
+</style>
+## Introduction
+Recommender systems became an important research area since the appearance 
+papers on collaborative filtering since the mid-1990s. There 
+done both in the industry and academia on developing new approaches to
+over the last decade. The interest in this area still remains high because 
+research area and because of the abundance of practical applications that 
+with information overload and provide personalized recommendations, content
+them.
+
+```{r echo=FALSE, message=FALSE}
+library(knitr)
+read_chunk('packages_libraries.R')
+read_chunk('aux_funct.R')
+read_chunk('data_exploration.R')
+read_chunk('neighborhood_based.R')
+```
+### Packages and Libraries
+The following packages are used to generate the report. Since most of the plotting in the report is interactive, plotly is a good resource to harness that capability.
+```{r packages, message=FALSE, warning=FALSE}
+<<packages_and_libraries>>
+```
+
+
+## Dataset: JESTER
+About the data: write briefly.
+
+## Why recommend jokes?
+Business sense to recommend jokes.
+
+## Data Exploration
+### Ratings Distribution
+Let's start by reading the data. Since the data is in `'.csv'` format without any headers, we read and set the headers. We also remove the first column and set all ratings with value `99` as `NA`.
+```{r}
+<<reading_ratings>>
+```
+
+There are **24,983** users who have rated **100** jokes. The ratings that are given by these users lie in the range **-10.00** to **+10.00**. To look at the the distribution of ratings and its density we plot the follwing graph:
+```{r histogram, eval = TRUE, fig.width=12, fig.height=4, fig.align='center', message=FALSE, warning=FALSE}
+<<sparsity>>
+<<aux_funct_wide_to_long>>
+<<histogram_ratings>>
+```
+The data is not sparse at all compared to a conventional collaborative filtering dataset. Most of the ratings dataset are ~99% sparse posing a greater challenge to build statistically robust models on them.
+The distribution of the ratings appears to be multimodal, however, there is a clear distinction in frequencies on either side of **0**. A good metric to compare this would be to look at average number of ratings that was given by a user on either side of 0.
+```{r sides_of_zero, eval=TRUE}
+<<ratings_side_user_average>>
+```
+On an average, a user rated , `r round(rat_per_user_more,0)` jokes with a rating more than 0 with an average rating of `r round(avg_rat_per_user_more,2)`. While it was `r round(rat_per_user_less,0)` jokes and `r round(avg_rat_per_user_less,2)` for less than 0 respectively!
+The average rating given by the users is `r round(mean(molten_data$value),2)`, which we will be using as our baseline model to evaluate our algorithms.
+
+### Popular Jokes and Average Ratings Distribution
+Let us look at jokes which were rated the most. This is an indicator of popular jokes and a simple popularity based recommender can be build on top of it. But first, we will have to read in the jokes. The jokes text are HTML files so we process them and store them in a data frame for our reference later.
+```{r html_text_fetch}
+<<parse_html>>
+```
+The `joke_text` object now has text alongside the joke numbers. 
+```{r}
+<<popular_jokes>>
+kable(top3_rated_jokes, "html", caption = "Top 3 Most Rated Jokes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+Let's analyze few quick facts about the dataset. In terms of most rated jokes, the top 3 ones are summarized in the table. Almost 100% of the users rated the jokes 8, 13 and 17. However, they are not the best of the jokes. Just for humor, let's see what the most rated joke was, Joke 8:   
+<span style="color:blue">
+`r joke_text$joke_text[joke_text$joke_no == 8]`
+</span>
+Similarly, bottom 3 rated jokes were identified and they had ratings from ~34.5% of the users.
+```{r}
+kable(bottom3_rated_jokes, "html", caption = "Top 3 Least Rated Jokes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+Jokes 71, 72 and 73 were among the least rated jokes.   
+The best joke (which highest average rating) and the worst joke were identified to be Joke 50 and Joke 58 respectively. Beware, the worst joke was:   
+<span style="color:blue">
+`r joke_text$joke_text[joke_text$joke_no == 58]`
+</span>
+while the best joke was:   
+<span style="color:blue">
+`r joke_text$joke_text[joke_text$joke_no == 50]`
+</span>
+The following table summarizes the top 3 best and worst jokes:   
+```{r}
+kable(best3_jokes, "html", caption = "Best 3 Jokes Based on Average Rating") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+kable(worst3_jokes, "html", caption = "Worst 3 Jokes Based on Average Rating") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+
+The average ratings of the jokes had the distribution which is very intuitive, where a few jokes were exceptionally good, while most of the jokes were centered around 0.
+```{r average_ratings_jokes, eval = TRUE, fig.width=12, fig.height=4, fig.align='center', message=FALSE, warning=FALSE}
+<<average_ratings_jokes>>
+```
+
+### Ratings Matrix Visualization: Heat Map
+```{r heat_map_visualization, eval = TRUE,fig.align='center', message=FALSE, warning=FALSE}
+<<ratings_viz_heat>>
+```
+This lets us visualize jokes which are highly rated. Some red vertical striped are very clearly seen, which are the jokes which are rated good by the users. Also, some vertical blue stripes are also visible. A user might have tendency to give better ratings than other users, in that case a consistent color horizontal patch might help us to identify such patterns. Most of the image in the right, is white implying that the items towards the end had not been rated much. This brings the sparsity to the data and it is good to know that most of the sparsity is coming from one end of data.
+Another quick way of visualization for the ratings is to identify the jokes and users with a minimum cut-off. This way, we get to know about the opinions of people on popular jokes and *active* users. In other words, the following chart gives us most relevant jokes and users.
+```{r echo=TRUE, eval = TRUE, fig.align='center', message=FALSE, warning=FALSE}
+<<ratings_viz_heat_segment>>
+```
+Clear patterns of colored patches are observed in the figure above. We sampled the data such that minimum number of jokes rated by the user was greater than the 70th percentile of distribution of number of ratings by the user. A similar cut-off for number of user ratings was applied on jokes, but with the 75th percentile filter.   
+------------------   
+
+
+## Recommender Algorithms
+### Setting Up Data
+The total number of ratings that we have is `#r nrow(molten_data)`. However, we split the data into training and test sets and let the proportion be one of the parameters to evaluate the algorithms.   
+Here is a function to do the job.
+```{r}
+<<aux_funct_train_test_split>>
+```
+We will vary the train proportion and evaluate the recommender systems that are to be developed in the following sections. We set the seed to reporduce the results in the report.
+
+
+### Collaborative Filtering: Item Based
+
+Item-item collaborative filtering, or item-based is a form of collaborative filtering for recommender systems based on the similarity between items calculated using people's ratings of those items.   
+First, the system executes a model-building stage by finding the similarity between all pairs of items. This similarity function can take many forms and here we will be using Pearson, Cosine and Jaccard similarity.   
+Second, the system executes a recommendation stage. It uses the most similar items to a user's already-rated items to generate a list of recommendations. Usually this calculation is a weighted sum. This form of recommendation is analogous to "people who rate item X highly, like you, also tend to rate item Y highly, and you haven't rated item Y yet, so you should try it".   
+With more users than items, each item tends to have more ratings than each user, so an item's average rating usually doesn't change quickly. This leads to more stable rating distributions in the model, so the model doesn't have to be rebuilt as often. When users consume and then rate an item, that item's similar items are picked from the existing system model and added to the user's recommendations.   
+The following image represents the similarity of jokes based on the ratings and pearson correlation.
+```{r echo=TRUE, eval = TRUE, fig.align='center', message=FALSE, warning=FALSE}
+<<item_similarity>>
+```
+Firstly, we use the package function to build up our IBCF model.
+```{r}
+<<aux_funct_wide_to_long>>
+<<item_based_collaborative_filter>>
+```
+In the above code, we take 30 most similar jokes and use them to predict ratings. We are using the pearson similarity to identify the neighbors. A quick plot of the heatmap of the similarity matrix will show us that only 30 jokes are being used and most of the entries will be 0.
+```{r echo=TRUE, eval = TRUE, fig.align='center', message=FALSE, warning=FALSE}
+<<similarity_matrix_model>>
+```
+Furthermore, to test out the similarity matrix, we can see the matrix only has 30 entires per joke and rest are zero. Also, it is interesting to see which jokes are most similar to other jokes. In this case, it is joke number 98.
+```{r}
+<<similar_jokes_top>>
+```
+Again, just to see for humor, what joke 98 is:   
+<span style="color:blue">
+`r joke_text$joke_text[joke_text$joke_no == 98]`
+</span>   
+
+We can predict the ratings for the users and test the Mean Absolute Error on the testing set.
+```{r}
+<<predicted_ratings_item_based_algorithm>>
+```
+In this case, we get a MAE to be `r round(pearson_ibcf_mae,2)`. Can we do better than this? Let us try a few other models to find out.   
+We will be further evaluating the model above in the evaluation section to report the optimal setting for this algorithm.   
+Additionally, we can look at top - N products recommended to user, which is most often required in a production setting.
+```{r}
+<<top_n_ibcf>>
+```
+
+### Collaborative Filtering: User Based
+
+### Model Based: Frequent Pattern Mining
+### Model Based: Matrix Facrtorization
+
+## Evaluation
+### Cross Validation Results
+### Accuracy Measures
+### Coverage
+
+## Run Time Analysis
+
+## Conclusion
+
+## References

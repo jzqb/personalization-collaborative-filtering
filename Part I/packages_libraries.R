@@ -1,0 +1,11 @@
+## @knitr packages_and_libraries
+library(knitr, quietly = T)
+library(reshape2, quietly = T)
+library(lsa, quietly = T)
+library(Hmisc, quietly = T)
+library(plotly, quietly = T)
+library(DT, quietly = T)
+library(recommenderlab, quietly = T)
+library(XML, quietly = T)
+library(stringr, quietly = T)
+library(kableExtra, quietly = T)
