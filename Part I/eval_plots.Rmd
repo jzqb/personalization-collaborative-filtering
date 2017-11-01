@@ -1,0 +1,173 @@
+---
+title: "Jokes Recommendation"
+subtitle: |
+  Columbia University
+  
+  IEOR 4571 - Personalization Theory and Applications
+author: "Gaurav Singh, Carolyn Silverman, Cindy Wu, Maura Fitzerald"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: paper
+    toc: true
+---
+<style type="text/css">
+body {
+text-align: justify;
+font-size: 12pt;
+max-width: 1200px;
+margin-left: 100px;
+margin-right: 100px;
+}
+body .main-container {
+max-width: 1200px;
+font-size: 12pt;
+}
+</style>
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+read_chunk('packages_libraries.R')
+read_chunk('aux_funct.R')
+read_chunk('model_evaluation.R')
+read_chunk('model_evaluation_plots.R')
+```
+
+```{r packages, echo=FALSE, message=FALSE, warning=FALSE}
+<<packages_and_libraries>>
+```
+
+## Evaluation
+In this section, we evaluate and compare six different models:  
+
+* Item-based collaborative filtering with Pearson correlation  
+* Item-based collaborative filtering with cosine similarity  
+* User-based collaborative filtering with Pearson correlation  
+* User-based collaborative filtering with cosine similarity  
+* SVD for Matrix Factorization 
+* A random model (baseline)
+
+After we determine the best similarity metrics for item-based CF and user-based CF, we tune the parameters of our chosen models using cross-validation. The parameters we need to tune are: 
+
+* Neighborhood size k for item-based CF
+* Neighborhood size nn for user-based CF
+* (description) k for SVD
+
+Finally, we evaluate the overall accuracy of the models, as functions of the following variables:  
+
+* proportion of the dataset we train on
+* number of ratings given per user in the test set
+
+The following sections will elaborate on each of these tasks and display the results.
+
+
+### Cross Validation
+
+We start by limiting the dataset to the first 10,000 users to make training all of the models more manageable. Then, we split the ratings data into a training set and a test set based on users. For our initial evaulations, we will train on 80% of users and test our models on the other 20%.
+```{r  echo = TRUE, eval=FALSE}
+<<data_setup>>
+```
+
+Next, we devise an evaluation scheme on the training set to select the best models and tune parameters. We will use the evaluationScheme function in the recommenderlab package. We assign initial values (or a range of values to test) to the following parameters:   
+
+* n_fold: Number of cross validation folds  
+* items_to_keep: number of items given for test users; the rest are withheld for evauation  
+* threshold: jokes with a rating higher than this threshhold will be considered a positive rating in the binary representation    
+* n_recommendations: number of recommendations for the top-n lists  
+* k_items: hyperparameter for item-based cf (neighborhood size)  
+* nn_users: hyperparameter for user-based cf (neighborhood size)  
+
+```{r echo = TRUE, eval=FALSE}
+<<eval_scheme>>
+```
+
+Now we are ready to test our models. We start with four different collaborative filtering models, SVD (our model-based approach), and one random model to use as our baseline. For each, we will train 2 separate models: one to predict top-N lists and one to predict real rating values. 
+
+```{r echo = TRUE, eval=FALSE}
+<<compare_cf_models>>
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+#loading the model data so we don't have to re-train models every time we knit html
+<<load_plot_data>>
+```
+
+First, we evaluate top-N lists for each model:
+```{r, fig.show='hold', out.width='50%'}
+<<compare_cf_topN>>
+```
+
+Next, we compare error metrics for the ratings.
+```{r}
+<<compare_cf_ratings>>
+```
+
+The results indicate that user-based collaborative filtering with cosine similarity performs best on the jester dataset. For the item-based approaches, Pearson correlation outperforms cosine similarity. Let's now use cross-validation to tune the hyperparameter for each of these models.
+
+```{r echo = TRUE, eval=FALSE}
+<<ibcf_tune_k>>
+```
+
+```{r, fig.show='hold', out.width='50%'}
+<<ibcf_tune_k_plots>>
+```
+
+The optimal k for item-based CF is 5 or 10 when we want to predict top-N lists. However, if we want to predict the ratings, a higher value of k is better. The plot of MAE versus neighborhood size starts to level off after k=30, so we will use k=30 as the neighborhood size for our Pearson item-based CF model when we want to predict ratings.
+
+Next we use the same approach to tune the neighborhood size parameter for user-based collaborative filtering:
+```{r echo = TRUE, eval=FALSE}
+<<ubcf_tune_nn>>
+```
+
+```{r, fig.show='hold', out.width='50%'}
+<<ubcf_tune_nn_plots>>
+```
+
+From the above plots, we see that the best neighborhood size for user-based CF is 250. However, nn=250 just barely outperforms nn=100, so we will choose a neighborhood size of 100 in our final model to improve running time.
+
+Finally, let's tune the parameter k for the model-based approach...
+
+```{r echo = TRUE, eval=FALSE}
+#code for tuning k
+```
+
+```{r, fig.show='hold', out.width='50%'}
+#code for plotting k
+```
+
+
+### Accuracy Measures
+
+For our final chosen algorithms, let's examine how our prediction error, as measured by MAE, changes with training size. Instead of using training size explicitly, we use proportion of the data trained on. Since the total size of the limited dataset is 10,000, a portion of .2 would mean that we trained the model on 2,000 users and tested it on the other 8,000.
+```{r echo = TRUE, eval=FALSE}
+<<err_vs_size>>
+```
+
+```{r}
+<<err_vs_size_all_plot>>
+```
+
+The plot indicates that for both models, we only need to train on 10-20% of the users before MAE stabilizes.
+
+An additional question to consider is the following: how many ratings for a new user do we need in order to make accurate predictions? In the above analyses, we provided 15 ratings per test user, but might we get better results if we increased this number? To answer this question, let's plot prediction error (MAE) as a function of number of ratings given per user in the test set. Intuitively, this number must be less than the number of ratings supplied by the user for which we have the least information (here, it is 36). Otherwise, we would be unable to test our predictions! 
+
+```{r echo = TRUE, eval=FALSE}
+<<err_vs_numitems>>
+```
+
+```{r}
+<<err_vs_numitems_plot>>
+```
+
+The plot shows that the MAE of our collaborative filtering models do not level out as the number of items given approaches 35, which implies that we need more information about a user's sense of humor (i.e. more joke ratings) to generate more accurate predictions. In order to obtain this information, we will train and test one final set of models on the of subset users for which we have complete information (that is 100 joke ratings). This subset has 2899 users. We will train on 80% of these users and test on the other 20%.
+
+```{r echo = TRUE, eval=FALSE}
+<<err_vs_numitems_complete>>
+```
+
+```{r}
+<<err_vs_numitems_complete_plot>>
+```
+
+We see an uninterrupted decline in MAE until we reach 45 ratings for user-based CF and 50 ratings given for item-based CF. After these points, MAE begins to fluctuate more drastically. Therefore, we recommend that if a user wants us to predict his rating for an unseen joke, he should provide us with around 50 ratings for other jokes so that the models can better learn his sense of humor.
+  
+### Coverage
