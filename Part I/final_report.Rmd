@@ -25,14 +25,9 @@ font-size: 12pt;
 }
 </style>
 ## Introduction
-Recommender systems became an important research area since the appearance 
-papers on collaborative filtering since the mid-1990s. There 
-done both in the industry and academia on developing new approaches to
-over the last decade. The interest in this area still remains high because 
-research area and because of the abundance of practical applications that 
-with information overload and provide personalized recommendations, content
-them.
-
+Recommender systems became an important research area since the appearance of the first papers on collaborative filtering since the mid-1990s. There has been much work done both in the industry and academia on developing new approaches to recommender systems over the last decade. The interest in this area still remains high because it constitutes a problem- rich research area and because of the abundance of practical applications that help users to deal with information overload and provide personalized recommendations, content and services to them.
+![Item Based Collaborative Filtering Approach.](img/cf.png)
+In this project, we build and evaluate memory based and model based recommender systems for jokes.
 ```{r echo=FALSE, message=FALSE}
 library(knitr)
 read_chunk('packages_libraries.R')
@@ -144,6 +139,7 @@ We will vary the train proportion and evaluate the recommender systems that are 
 ### Collaborative Filtering: Item Based
 
 Item-item collaborative filtering, or item-based is a form of collaborative filtering for recommender systems based on the similarity between items calculated using people's ratings of those items.   
+![Item Based Collaborative Filtering Approach.](img/item.png)
 First, the system executes a model-building stage by finding the similarity between all pairs of items. This similarity function can take many forms and here we will be using Pearson, Cosine and Jaccard similarity.   
 Second, the system executes a recommendation stage. It uses the most similar items to a user's already-rated items to generate a list of recommendations. Usually this calculation is a weighted sum. This form of recommendation is analogous to "people who rate item X highly, like you, also tend to rate item Y highly, and you haven't rated item Y yet, so you should try it".   
 With more users than items, each item tends to have more ratings than each user, so an item's average rating usually doesn't change quickly. This leads to more stable rating distributions in the model, so the model doesn't have to be rebuilt as often. When users consume and then rate an item, that item's similar items are picked from the existing system model and added to the user's recommendations.   
@@ -181,6 +177,26 @@ Additionally, we can look at top - N products recommended to user, which is most
 ```
 
 ### Collaborative Filtering: User Based
+The user based recommendation algorithm uses a similarity-based vector model to identify the k most similar users to an active user. After the k most similar users are found, their corresponding user-item matrices are aggregated to identify the set of items to be recommended. It uses the fact that people who agreed in the past are likely to agree again. Similarity between users is decided by looking at their overlap in opinions for other items.
+The parameters that we pass in the model can be seen below:
+```{r}
+<<user_based_parameters>>
+```
+The method arguments takes in the similarity metric that will be used to calculate user similarity. We demonstrate for cosine [default] similarity here, howerver in evaluation we can check which similarity metric works best for this data set.   
+We have over 24k users in our dataset, so we are skipping visualization of the complete user-user similarity matrix, which can be done in the same way as item-item similarity.   
+We build our user based collaborative filter with 25 [default] nearest neighbours as follows:
+```{r eval=FALSE, echo=TRUE}
+<<user_based_collaborative_filter>>
+```
+Once the model is learnt, we can test out the performance on the testing set.
+```{r eval = FALSE, echo= TRUE}
+<<predicted_ratings_user_based_algorithm>>
+```
+MAE for this setting is `r #round(cosine_ubcf_mae,2)`, which is higher than IBCF. We will evaluate further and tune our hyper-parameters in evaluation section.   
+The User Based Collaborative Filter coverage can be looked in the same way as Item Based, by looking at the top-k recommendations for the users. Here we consider what are the top 5 recommended jokes for the users.
+![Item Based Collaborative Filtering Approach.](img/user.png)
+
+The figure above shows the filtering of users who rated the same items.
 
 ### Model Based: Frequent Pattern Mining
 ### Model Based: Matrix Facrtorization
