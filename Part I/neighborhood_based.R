@@ -1,3 +1,6 @@
+## @knitr sourcing_ubcf_data
+load('ubcf_cf.RData')
+
 ## @knitr item_similarity
 #### remove this part in final report compilation
 f <- list(
@@ -80,6 +83,74 @@ avg_ratings_plot <- plot_ly(x = names(jokes_avg_rating), y = jokes_avg_rating, t
 
 subplot(reco_plot, avg_ratings_plot, nrows = 2, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE)
 
+## @knitr item_based_brute_force
+item_similarity_cosine <- function(ratings){
+  item_ratings <- ratings
+  item_ratings_centered <- as.data.frame(t(apply(t(item_ratings), 2, FUN = function(x){x- mean(x, na.rm = T)})))
+  cos_ratings <- item_ratings_centered
+  cos_ratings[is.na(cos_ratings)] <- 0
+  cosine_item_sim <- cosine(as.matrix(cos_ratings))
+  return(cosine_item_sim)
+}
+
+item_similarity_pearson <- function(ratings){
+  item_ratings <- ratings
+  pear_item_sim <- as.matrix(cor(item_ratings, use = 'pairwise.complete.obs'))
+  return(pear_item_sim)
+}
+
+predict_rating_item_cf <- function(ratings, k=20, user_no, item_no, similarity = c('cosine', 'pearson')){
+  user <- ratings[user_no,] 
+  unrated <- names(user[,is.na(user)])
+  rated <- names(user[,!is.na(user)])
+  if(paste('i_',item_no, sep = "") %nin% unrated){
+    return(ratings[user_no, item_no])
+  }
+  else{
+    if(similarity == 'cosine'){use_sim = i_s_c}
+    else{use_sim = i_s_p}
+    sim_mov <- as.data.frame(use_sim[,item_no])
+    sim_mov$item <- row.names(sim_mov)
+    sim_mov <- sim_mov[order(-sim_mov$`use_sim[, item_no]`),]
+    sim_mov <- sim_mov[sim_mov$item != paste('i_',item_no, sep = ""),]
+    sim_mov <- sim_mov[1:k,]
+    sim_mov <- sim_mov[sim_mov$item %in% rated,]
+    um <- as.data.frame(t(user[,!is.na(user)]))
+    um$item <- rownames(um)
+    rate_insitu <- merge(sim_mov, um, by = 'item', all.x = T)
+    names(rate_insitu) <- c('item', 'sim', 'rating')
+    rate_insitu$rating <- as.numeric(as.character(rate_insitu$rating))
+    return(sum(rate_insitu$sim*rate_insitu$rating)/sum(rate_insitu$sim))
+  }
+}
+i_s_c <- item_similarity_cosine(feed_data)
+i_s_p <- item_similarity_pearson(feed_data)
+
+data_avg_rating <- mean(molten_data$value)
+baseline_mae <- sum(abs(test_data$value - data_avg_rating))/nrow(test_data)
+test_users <- as.numeric(gsub('u_', '', test_data$user))
+test_items <- as.numeric(gsub('i_', '', test_data$variable))
+
+test_data$prediction <- 0
+for(test_case in 1:10000){
+  test_user <- as.numeric(gsub('u_', '',test_data[test_case,1]))
+  test_item <- as.numeric(gsub('i_', '',test_data[test_case,2]))
+  test_data[test_case, 4] <- predict_rating_item_cf(feed_data, k = 20, test_user, test_item, similarity = 'cosine')
+}
+insitu <- test_data[1:10000,]
+cos_mae_ibcf_bf <- sum(abs(insitu$value - insitu$prediction), na.rm = T)/nrow(insitu)
+
+
+test_data$prediction <- 0
+for(test_case in 1:10000){
+  test_user <- as.numeric(gsub('u_', '',test_data[test_case,1]))
+  test_item <- as.numeric(gsub('i_', '',test_data[test_case,2]))
+  test_data[test_case, 4] <- predict_rating_item_cf(feed_data, k = 20, test_user, test_item, similarity = 'pearson')
+}
+insitu <- test_data[1:10000,]
+pear_mae_ibcf_bf <- sum(abs(insitu$value - insitu$prediction))/nrow(insitu)
+
+
 ## @knitr user_based_parameters
 recommender_models <- recommenderRegistry$get_entries(dataType = "realRatingMatrix")
 recommender_models$UBCF_realRatingMatrix$parameters
@@ -99,6 +170,8 @@ predicted_ratings$item <- as.character(predicted_ratings$item)
 test_data$user <- as.character(test_data$user)
 test_data$variable <- as.character(test_data$variable)
 test_data <- merge(test_data, predicted_ratings, by.x = c('user', 'variable'), by.y = c('user','item'), all.x = TRUE)
+
+## @knitr ubcf_mae
 cosine_ubcf_mae <- mean(abs(test_data$value-test_data$rating), na.rm = TRUE)
 cosine_ubcf_mae
 
@@ -113,6 +186,7 @@ recc_data <- do.call(rbind, lapply(recc_matrix, data.frame, stringsAsFactors=FAL
 names(recc_data) <- 'item_recommended'
 number_of_items <- factor(table(recc_data$item_recommended))
 
+## @knitr ubcf_coverage_viz
 reco_plot <- plot_ly(x = names(number_of_items), y = number_of_items, type = 'bar', text = names(number_of_items), marker = list(color = 'rgb(158,202,225)', line = list(color = 'rgb(8,48,107)', width = 1.5))) %>%
   layout(title = "Frequency Plot of Jokes Recommended to Users - UBCF", xaxis = list(title = "Jokes"), yaxis = list(title = "Recommended Frequency"))
 
