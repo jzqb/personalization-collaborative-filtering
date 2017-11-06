@@ -37,6 +37,7 @@ read_chunk('packages_libraries.R')
 read_chunk('aux_funct.R')
 read_chunk('data_exploration.R')
 read_chunk('neighborhood_based.R')
+read_chunk('associations rules and pca.R')
 read_chunk('model_evaluation.R')
 read_chunk('model_evaluation_plots.R')
 ```
@@ -240,7 +241,18 @@ kable(worst3_jokes, "html", caption = "Worst 3 Jokes Based on Average Rating") %
 * The figure above shows the filtering of users who rated the same items.
 
 ### Model Based: Frequent Pattern Mining
+
+```{r}
+<<arules>>
+```
+
+
 ### Model Based: Matrix Facrtorization
+
+```{r}
+<<pca>>
+```
+
 
 ## Evaluation
 In this section, we evaluate and compare six different models:  
