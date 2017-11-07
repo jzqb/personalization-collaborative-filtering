@@ -415,8 +415,44 @@ The plot shows that the MAE of our collaborative filtering models do not level o
 
 We see an uninterrupted decline in MAE until we reach 45 ratings for user-based CF and 50 ratings given for item-based CF. After these points, MAE begins to fluctuate more drastically. Therefore, we recommend that if a user wants us to predict his rating for an unseen joke, he should provide us with around 50 ratings for other jokes so that the models can better learn his sense of humor.
 
-## Run Time Analysis
+### Run Time Analysis
+
+Now let's consider the running time in relation to the size of sample data. From the graph below, we can see that SVD is fastest algorithm and Cosine User-based CF is much slower than the rest. Also notice that the running time of Cosine User-based CF increases significantly with the size of traning data, whereas the running time for other models fluctuate within a relatively small range.
+
+```{r, warning=FALSE, message=FALSE}
+<<size_vs_time_all_plot>>
+```
+
+```{r echo = TRUE, eval=FALSE}
+<<size_vs_time>>
+```
+
+Earlier we have concluded that the sufficient amount of sample proportion to stablize MAE is .1-.2. So now we take a look at how fast the models perform with different size of traning data.
+
+```{r, warning=FALSE, message=FALSE}
+<<size_vs_time_IB_plot>>
+```
+
+For Item-based CF, total running time becomes relatively stable as traning proportion reaches .1, and acheives a local minimum at traning proportion = .4. We can also see that training time surpasses prediction timeAs traning proportion goes beyond .2.  
+
+```{r, warning=FALSE, message=FALSE}
+<<size_vs_time_UB_plot>>
+```
+
+For Usesr_based CF, we see a postivie correlation between sample size and prediction time, whereas training time remains stable. Total Run time increases as sample data size gets larger.
+
+```{r, warning=FALSE, message=FALSE}
+<<size_vs_time_svd_plot>>
+```
+
+For SVD Matrix Factorization model, total running time remains fairly stable after sample proportion passes .1 and reaches a minimum at around .45. 
+
+Therefore, we see that larger sample data size doesn't necessarily lead to slower running time. The running time for Item-based CF and SVD algorithms are not signicantly affected by the size of traning data, whereas User-Based CF takes longer to process as the size of traning data increases. 
 
 ## Conclusion
+Models that performs well for the jester dataset: 
+User-Based CF with Cosine similarity and nn = 100
+Item-Based CF with Pearson similiarity and k = 30
+SVD Matrix Factorization with k = 10
 
 ## References
