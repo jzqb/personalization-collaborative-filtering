@@ -1,7 +1,7 @@
-# source('packages_libraries.R')
-# source('aux_funct.R')
-# source('data_exploration.R')
-# source('neighborhood_based.R')
+#source('packages_libraries.R')
+#source('aux_funct.R')
+#source('data_exploration.R')
+#source('neighborhood_based.R')
 
 ## @knitr data_setup
 ratings <- ratings[1:10000,]
@@ -19,7 +19,7 @@ rating_threshold <- 5
 n_recommendations <- c(1, 3, 5, seq(10, 40, 10))
 k_items <- c(5,seq(10, 40, 10)) 
 nn_users <- c(5, 10, 25, 100, 250)
-k_svd <- c() #possible values for k in svd
+k_svd <- c(5,seq(10, 40, 10)) 
 eval_sets <- evaluationScheme(data = training_sparse, method = "cross-validation", 
                   k = n_fold, given = items_to_keep, goodRating = rating_threshold)
 
@@ -29,6 +29,7 @@ models_to_evaluate <- list(
   IBCF_cor = list(name = "IBCF", param = list(method = "pearson")),
   UBCF_cos = list(name = "UBCF", param = list(method = "cosine")),
   UBCF_cor = list(name = "UBCF", param = list(method = "pearson")),
+  SVD = list(name = "SVD"),
   random = list(name = "RANDOM", param=NULL)
 )
 list_results <- evaluate(x = eval_sets, method = models_to_evaluate, type="topNList", n = n_recommendations)
@@ -51,12 +52,20 @@ models_to_evaluate_ub <- lapply(nn_users, function(k){
 })
 names(models_to_evaluate_ub) <- paste0("UBCF_nn_", nn_users)
 list_results_ub <- evaluate(x = eval_sets, method = models_to_evaluate_ub, n = n_recommendations)
+avg_matrices_ub <- lapply(list_results_ub, avg)
 rat_results_ub <- evaluate(x = eval_sets, method = models_to_evaluate_ub, type="ratings")
 err_ub <- do.call(rbind.data.frame, avg(rat_results_ub))
 
 
 ## @knitr svd_tun_k
-#insert code here
+models_to_evaluate_svd <- lapply(k_svd, function(k){
+  list(name = "SVD", param = list(k = k))
+})
+names(models_to_evaluate_svd) <- paste0("SVD_k_", k_svd)
+list_results_svd <- evaluate(x = eval_sets, method = models_to_evaluate_svd, n = n_recommendations)
+avg_matrices_svd <- lapply(list_results_svd, avg)
+rat_results_svd <- evaluate(x = eval_sets, method = models_to_evaluate_svd, type="ratings")
+err_svd <- do.call(rbind.data.frame, avg(rat_results_svd))
 
 ## @knitr err_vs_size
 sample_test <- function(x, n = 15){
@@ -66,6 +75,7 @@ sample_test <- function(x, n = 15){
 }
 
 sample_prop <- c(.001, .005, seq(.01, .1, by = .01), seq(.15, .5, by = .05))
+sample_prop_svd <- c(.005,seq(.01, .1, by = .01), seq(.15, .5, by = .05))
 train_eval <- function(proportion, given = 15, method, param, data = ratings){
   split <- train_test_split(data, train_proportion = proportion)
   train_data <- split$train_data
@@ -80,7 +90,7 @@ train_eval <- function(proportion, given = 15, method, param, data = ratings){
   
   predicted_ratings <- predict(ibcf_pearson, test_sample_sparse, type = 'ratings')
   err_metrics <- calcPredictionAccuracy(x = predicted_ratings, data = test_data_sparse)
-  return(err_metrics)
+  return(list(err_metrics, predicted_ratings))
 }
 
 #Item-based Pearson
@@ -104,10 +114,15 @@ names(size_err_rand) <- c('RMSE','MSE','MAE')
 size_err_rand$train_prop <- sample_prop
 size_err_rand$model <- "Random"
 
-#SVD
-#Insert code here
 
-size_err_all <- rbind(size_err_IB, size_err_UB, size_err_rand)
+#SVD
+size_err_SVD <- lapply(sample_prop_svd, train_eval, method = "SVD", param = list(k = 10, maxiter = 100))
+size_err_SVD <- do.call(rbind.data.frame, size_err_SVD)
+names(size_err_SVD) <- c('RMSE','MSE','MAE')
+size_err_SVD$train_prop <- sample_prop_svd
+size_err_SVD$model <- "SVD Matrix Factorization"
+
+size_err_all <- rbind(size_err_IB, size_err_UB, size_err_SVD, size_err_rand)
 
 
 ## @knitr err_vs_numitems
@@ -136,14 +151,20 @@ names(keep_err_rand) <- c('RMSE','MSE','MAE')
 keep_err_rand$ratings_given <- keep
 keep_err_rand$model <- "Random"
 
-#add code for keep_err_SVD
+#SVD
+keep_err_SVD <- lapply(keep, train_eval, proportion = .2, method = "SVD", param =list(k = 10))
+keep_err_SVD <- do.call(rbind.data.frame, keep_err_SVD)
+names(keep_err_SVD) <- c('RMSE','MSE','MAE')
+keep_err_SVD$ratings_given <- keep
+keep_err_SVD$model <- "SVD"
 
-keep_err_all <- rbind(keep_err_IB, keep_err_UB, keep_err_rand)
+keep_err_all <- rbind(keep_err_IB, keep_err_UB, keep_err_SVD, keep_err_rand)
 
 
 ## @knitr err_vs_numitems_complete
 ratings_full <- ratings[complete.cases(ratings), ]
 keep2 <- seq(5,95,5)
+
 keep2_err_IB <- lapply(keep2, train_eval, data = ratings_full, proportion = .8, method = "IBCF", param = list(k = 30, method = 'pearson'))
 keep2_err_IB <- do.call(rbind.data.frame, keep2_err_IB)
 names(keep2_err_IB) <- c('RMSE','MSE','MAE')
@@ -154,5 +175,11 @@ keep2_err_UB <- do.call(rbind.data.frame, keep2_err_UB)
 names(keep2_err_UB) <- c('RMSE','MSE','MAE')
 keep2_err_UB$model <- "Cosine User-Based CF"
 
-keep2_err_all <- rbind(keep2_err_IB, keep2_err_UB)
+keep2_err_SVD <- lapply(keep2, train_eval, data = ratings_full, proportion = .8, method = "SVD", param = list(k = 10))
+keep2_err_SVD <- do.call(rbind.data.frame, keep2_err_SVD)
+names(keep2_err_SVD) <- c('RMSE','MSE','MAE')
+keep2_err_SVD$model <- "SVD Matrix Factorization"
+
+keep2_err_all <- rbind(keep2_err_IB, keep2_err_UB, keep2_err_SVD)
 keep2_err_all$ratings_given <- keep2
+
