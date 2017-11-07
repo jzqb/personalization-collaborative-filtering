@@ -19,7 +19,7 @@ rating_threshold <- 5
 n_recommendations <- c(1, 3, 5, seq(10, 40, 10))
 k_items <- c(5,seq(10, 40, 10)) 
 nn_users <- c(5, 10, 25, 100, 250)
-k_svd <- c() #possible values for k in svd
+k_svd <- c(2,4,6,8,9,10,11,12, 14,16, 18,20) #possible values for k in svd
 eval_sets <- evaluationScheme(data = training_sparse, method = "cross-validation", 
                   k = n_fold, given = items_to_keep, goodRating = rating_threshold)
 
@@ -29,11 +29,18 @@ models_to_evaluate <- list(
   IBCF_cor = list(name = "IBCF", param = list(method = "pearson")),
   UBCF_cos = list(name = "UBCF", param = list(method = "cosine")),
   UBCF_cor = list(name = "UBCF", param = list(method = "pearson")),
+  SVD = list(name = "SVD"),
   random = list(name = "RANDOM", param=NULL)
 )
 list_results <- evaluate(x = eval_sets, method = models_to_evaluate, type="topNList", n = n_recommendations)
 rat_results <- evaluate(x = eval_sets, method = models_to_evaluate, type="ratings")
 err <- do.call(rbind.data.frame, avg(rat_results))
+
+## @knitr ignore-1
+#saveRDS(list_results, "model info/list_results.rds")
+#saveRDS(rat_results, "model info/rat_results.rds")
+#saveRDS(err, "model info/err.rds")
+
 
 ## @knitr ibcf_tune_k 
 models_to_evaluate_ib <- lapply(k_items, function(k){
@@ -56,7 +63,19 @@ err_ub <- do.call(rbind.data.frame, avg(rat_results_ub))
 
 
 ## @knitr svd_tun_k
-#insert code here
+models_to_evaluate_svd <- lapply(k_svd, function(k){
+  list(name = "SVD", param = list(k=k))
+})
+names(models_to_evaluate_svd) <- paste0("SVD_k_", k_svd)
+list_results_svd <- evaluate(x = eval_sets, method = models_to_evaluate_svd, n = n_recommendations)
+rat_results_svd <- evaluate(x = eval_sets, method = models_to_evaluate_svd, type="ratings")
+err_svd <- do.call(rbind.data.frame, avg(rat_results_svd))
+
+## @knitr ignore-2
+#saveRDS(list_results_svd, "model info/list_results_svd.rds")
+#saveRDS(rat_results_svd, "model info/rat_results_svd.rds")
+#saveRDS(err_svd, "model info/err_svd.rds")
+
 
 ## @knitr err_vs_size
 sample_test <- function(x, n = 15){
@@ -105,9 +124,17 @@ size_err_rand$train_prop <- sample_prop
 size_err_rand$model <- "Random"
 
 #SVD
-#Insert code here
+size_err_svd <- lapply(sample_prop, train_eval, method = "SVD", param = list(k=10))
+size_err_svd <- do.call(rbind.data.frame, size_err_svd)
+names(size_err_svd) <- c('RMSE','MSE','MAE')
+size_err_svd$train_prop <- sample_prop
+size_err_svd$model <- "SVD"
 
-size_err_all <- rbind(size_err_IB, size_err_UB, size_err_rand)
+
+size_err_all <- rbind(size_err_IB, size_err_UB, size_err_svd, size_err_rand)
+
+## @knitr ignore-3
+#saveRDS(size_err_all, "model info/size_err_all.rds")
 
 
 ## @knitr err_vs_numitems
@@ -137,8 +164,17 @@ keep_err_rand$ratings_given <- keep
 keep_err_rand$model <- "Random"
 
 #add code for keep_err_SVD
+keep_err_svd <- lapply(keep, train_eval, proportion = .2, method = "SVD", param = list(k=10))
+keep_err_svd <- do.call(rbind.data.frame, keep_err_svd)
+names(keep_err_svd) <- c('RMSE','MSE','MAE')
+keep_err_svd$ratings_given <- keep
+keep_err_svd$model <- "SVD"
 
-keep_err_all <- rbind(keep_err_IB, keep_err_UB, keep_err_rand)
+
+keep_err_all <- rbind(keep_err_IB, keep_err_UB, keep_err_svd, keep_err_rand)
+
+## @knitr ignore-4
+#saveRDS(keep_err_all, "model info/keep_err_all.rds")
 
 
 ## @knitr err_vs_numitems_complete
@@ -156,3 +192,6 @@ keep2_err_UB$model <- "Cosine User-Based CF"
 
 keep2_err_all <- rbind(keep2_err_IB, keep2_err_UB)
 keep2_err_all$ratings_given <- keep2
+
+## @knitr ignore-5
+#saveRDS(keep2_err_all, "model info/keep2_err_all.rds")

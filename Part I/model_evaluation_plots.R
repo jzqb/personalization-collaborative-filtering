@@ -1,14 +1,36 @@
 ## @knitr load_plot_data
 load('pal.RData')
 load('all_models.RData')
+#overwrite with svd models - doing this way so i dont remove anything important
+list_results <- readRDS("model info/list_results.rds")
+rat_results <- readRDS("model info/rat_results.rds")
+err <- readRDS("model info/err.rds")
+list_results_svd <- readRDS("model info/list_results_svd.rds")
+rat_results_svd <- readRDS("model info/rat_results_svd.rds")
+err_svd <- readRDS("model info/err_svd.rds")
+size_err_all <- readRDS( "model info/size_err_all.rds")
+keep_err_all <- readRDS( "model info/keep_err_all.rds")
+#keep2_err_all <- readRDS( "model info/keep2_err_all.rds")
+#dont break things
+models_to_evaluate <- list(
+  IBCF_cos = list(name = "IBCF", param = list(method = "cosine")),
+  IBCF_cor = list(name = "IBCF", param = list(method = "pearson")),
+  UBCF_cos = list(name = "UBCF", param = list(method = "cosine")),
+  UBCF_cor = list(name = "UBCF", param = list(method = "pearson")),
+  SVD = list(name = "SVD"),
+  random = list(name = "RANDOM", param=NULL)
+)
+k_svd <- c(2,4,6,8,9,10,11,12, 14,16, 18,20) #possible values for k in svd
+
+
 library(ggplot2)
 library(gridExtra)
 
 ## @knitr compare_cf_topN
 plot(list_results, annotate = 1, legend = "topleft")
-title("ROC Curve Neighborhood-Based Models")
+title("ROC Curve")
 plot(list_results, "prec/rec", annotate = 1, legend = "bottomright")
-title("Precision-Recall Neighborhood-Based Models")
+title("Precision-Recall")
 
 ## @knitr compare_cf_ratings
 err$model <- row.names(err)
@@ -44,6 +66,20 @@ p3 <- ggplot(err_ub, aes(x = nn, y = MAE)) + geom_line(color = "red") +
   xlab("Number of Nearest Neighbors")
 p3 <- ggplotly(p3)
 p3
+
+## @knitr svd_tune_k_plots
+plot(list_results_svd, annotate = 1, legend = "topleft")
+title("ROC Curve SVD")
+plot(list_results_svd, "prec/rec", annotate = 1, legend = "bottomright")
+title("Precision-Recall SVD")
+err_svd$k <- k_svd
+p7 <- ggplot(err_svd, aes(x = k, y = MAE)) + geom_line(color = "blue") +
+  ggtitle("Prediction Error versus Number of Dimensions\nfor SVD") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Number of Dimensions")
+p7 <- ggplotly(p7)
+p7
+
 ## @knitr err_vs_size_plots
 #Error vs. Sample Size
 # ggplot(size_err_IB, aes(x = train_prop, y = MAE)) + geom_line() +

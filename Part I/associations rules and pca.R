@@ -39,14 +39,13 @@ inspect(user_a)
        
 ## @knitr pca
 
-#impute missing values
-ratings2 <- imputePCA(ratings.dt[,.SD, .SDcols=paste0('j_',c(1:100))])
-pca1 <- prcomp(ratings2$completeObs)
-pca1
+# Rating Matrix
+ratings.mat <- as.matrix(as.data.frame(ratings.dt[,user_id:=NULL]))
+ratings.mat <- as(ratings.mat, "realRatingMatrix")
 
-#use 0 for missing value
-ratings3 <- ratings.dt
-ratings3[is.na(ratings3)] <- 0
+# Default Model
+ratings.svd <- Recommender(ratings.mat, method = "SVD")
 
-pca2 <- prcomp(ratings3[,.SD, .SDcols=paste0('j_',c(1:100))])
-#pca2
+## @knitr pca-42
+reco_user_42 <- predict(ratings.svd, newdata=ratings.mat[42,])
+getList(reco_user_42)

@@ -266,12 +266,19 @@ For an individual user who has rated a number of items, these rules may provide 
 <<arules-predict>>
 ```
 
-### Model Based: Matrix Facrtorization
+### Model Based: Matrix Factorization
+
+Next we'll build a model using SVD to reduce the dimmensionality of the ratings matrix.  A large benefit of this approach over collaborative filtering approaches is faster prediction since less data needs to be read into memory.  For now we will use a default of k=10 components.
 
 ```{r}
 <<pca>>
 ```
 
+Recomendation for user 42:
+
+```{r}
+<<pca-42>>
+```
 
 ## Evaluation
 In this section, we evaluate and compare six different models:  
@@ -287,7 +294,7 @@ After we determine the best similarity metrics for item-based CF and user-based 
 
 * Neighborhood size k for item-based CF
 * Neighborhood size nn for user-based CF
-* (description) k for SVD
+* Dimensionality k for SVD
 
 Finally, we evaluate the overall accuracy of the models, as functions of the following variables:  
 
@@ -338,7 +345,7 @@ Next, we compare error metrics for the ratings.
 <<compare_cf_ratings>>
 ```
 
-The results indicate that user-based collaborative filtering with cosine similarity performs best on the jester dataset. For the item-based approaches, Pearson correlation outperforms cosine similarity. Let's now use cross-validation to tune the hyperparameter for each of these models.
+The results indicate that user-based collaborative filtering with cosine similarity performs best on the jester dataset. SVD performs better than item-based approaches and random. For the item-based approaches, Pearson correlation outperforms cosine similarity. Let's now use cross-validation to tune the hyperparameter for each of these models.
 
 ```{r echo = TRUE, eval=FALSE}
 <<ibcf_tune_k>>
@@ -364,13 +371,14 @@ From the above plots, we see that the best neighborhood size for user-based CF i
 Finally, let's tune the parameter k for the model-based approach...
 
 ```{r echo = TRUE, eval=FALSE}
-#code for tuning k
+<<svd_tune_k>>
 ```
 
 ```{r, fig.show='hold', out.width='50%'}
-#code for plotting k
+<<svd_tune_k_plots>>
 ```
 
+For SVD, it looks like the default of 10 dimensions performs best.
 
 ### Accuracy Measures
 
