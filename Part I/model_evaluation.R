@@ -195,3 +195,49 @@ keep2_err_all$ratings_given <- keep2
 
 ## @knitr ignore-5
 #saveRDS(keep2_err_all, "model info/keep2_err_all.rds")
+
+## @knitr size_vs_time
+train_eval_time <- function(proportion, given = 15, method, param, data = ratings){
+  split <- train_test_split(data, train_proportion = proportion)
+  train_data <- split$train_data
+  training_sparse <- as(as.matrix(train_data), 'realRatingMatrix')
+  test_data <- split$test_data
+  test_data_sparse <- as(as.matrix(test_data), 'realRatingMatrix')
+  time_begin_train <- Sys.time()
+  ibcf_pearson <- Recommender(data = training_sparse, method = method, parameter = param)
+  test_data_sample <- apply(test_data, 1, sample_test, n = given)
+  time_train <- as.double(Sys.time() - time_begin_train)
+  test_data_sample  <- as.data.frame(t(test_data_sample))
+  test_sample_sparse <- as(as.matrix(test_data_sample), 'realRatingMatrix')
+  time_begin_predict <- Sys.time()
+  predict(ibcf_pearson, test_sample_sparse, type = 'ratings')
+  time_predict <- as.double(Sys.time() - time_begin_predict)
+  return(list(proportion,time_train, time_predict, time_predict+time_train))
+}
+
+#Item-based Pearson
+size_time_IB <- lapply(sample_prop, train_eval_time, method = "IBCF", param = list(k = 30, method = 'pearson'))
+size_time_IB <- do.call(rbind.data.frame, size_time_IB)
+names(size_time_IB) <- c('Sample Proportion','Train time','Predict time','Total Running time')
+size_time_IB$model <- "Pearson Item-Based CF"
+
+#User-based Cosine
+size_time_UB <- lapply(sample_prop, train_eval_time, method = "UBCF", param = list(nn = 100, method = 'cosine'))
+size_time_UB <- do.call(rbind.data.frame, size_time_UB)
+names(size_time_UB) <- c('Sample Proportion','Train time','Predict time','Total Running time')
+size_time_UB$model <- "Cosine User-Based CF"
+
+#Random
+size_time_rand <- lapply(sample_prop, train_eval_time, method = "RANDOM", param = NULL)
+size_time_rand <- do.call(rbind.data.frame, size_time_rand)
+names(size_time_rand) <- c('Sample Proportion','Train time','Predict time','Total Running time')
+size_time_rand$model <- "Random"
+
+#SVD
+sample_prop_svd <- c(.003,.005,seq(.01, .1, by = .01), seq(.15, .5, by = .05))
+size_time_SVD <- lapply(sample_prop_svd, train_eval_time, method = "SVD", param = list(k = 10, maxiter = 100))
+size_time_SVD <- do.call(rbind.data.frame, size_time_SVD)
+names(size_time_SVD) <- c('Sample Proportion','Train time','Predict time','Total Running time')
+size_time_SVD$model <- "SVD Matrix Factorization"
+
+size_time_all <- rbind(size_time_IB, size_time_UB, size_time_SVD, size_time_rand)
