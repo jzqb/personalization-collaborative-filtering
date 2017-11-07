@@ -242,10 +242,29 @@ kable(worst3_jokes, "html", caption = "Worst 3 Jokes Based on Average Rating") %
 
 ### Model Based: Frequent Pattern Mining
 
+Another method we will be trying is association rules.  Basically we will be mining the data for patterns of jokes frequently liked or disliked together.  An advantage of this approach is that it's fairly interpretable and and we can easily tell the user why we are recommending something.  (You might like a because you liked b.)  
+
+One disadvantage of this approach is that it requires categorical data, so the full detail of a user's ratings is lost when we bin it.  In this case, we'll be grouping the ratings into three categories - dislike (< -3.30), neutral (-3.30 to +3.35) and like (> +3.35).  
+
+Because we want to recommend the better jokes (for an individual user) and this method discards a lot of that information, we don't plan on using this as our primary recommendation model.  However, because these rules are based on liking one or two jokes, we might consider using them to supplement popular items in cases where users have rated a very small number of jokes.
+
 ```{r}
 <<arules>>
 ```
 
+7,837 combinations were discovered where ratings of 1-3 jokes were predictive of the rating of another joke. 
+
+The ten strongest are shown below:
+
+```{r}
+<<arules-top10>>
+```
+
+For an individual user who has rated a number of items, these rules may provide insight into their tastes.  For instance, user 42 liked jokes 13 and 14. Liking both of these is correlated with liking joke 29.  User 42 gave this question a more neutral rating, but if they hadn't rated it we could give them a reason for recommending it. 
+
+```{r}
+<<arules-predict>>
+```
 
 ### Model Based: Matrix Facrtorization
 
