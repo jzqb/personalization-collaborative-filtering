@@ -118,7 +118,7 @@ p8 <- ggplot(size_time_all, aes(x = `Sample Proportion`)) +
   geom_line(aes( y = `Total Running time`,color = model)) +
   ggtitle("Running Time versus Sample Size") +
   xlab("Proportion of Data Trained On") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5),legend.title=element_blank())
 p8 <- ggplotly(p8)
 p8
 
