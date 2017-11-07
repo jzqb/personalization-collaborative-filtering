@@ -62,7 +62,7 @@ rat_results_ub <- evaluate(x = eval_sets, method = models_to_evaluate_ub, type="
 err_ub <- do.call(rbind.data.frame, avg(rat_results_ub))
 
 
-## @knitr svd_tun_k
+## @knitr svd_tune_k
 models_to_evaluate_svd <- lapply(k_svd, function(k){
   list(name = "SVD", param = list(k=k))
 })
