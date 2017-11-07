@@ -112,3 +112,48 @@ p6 <- ggplot(keep2_err_all, aes(x = ratings_given, y = MAE)) + geom_line(aes(col
   theme(plot.title = element_text(hjust = 0.5))
 p6 <- ggplotly(p6)
 p6
+
+## @knitr size_vs_time_all_plot
+p8 <- ggplot(size_time_all, aes(x = `Sample Proportion`)) + 
+  geom_line(aes( y = `Total Running time`,color = model)) +
+  ggtitle("Running Time versus Sample Size") +
+  xlab("Proportion of Data Trained On") +
+  theme(plot.title = element_text(hjust = 0.5))
+p8 <- ggplotly(p8)
+p8
+
+## @knitr size_vs_time_IB
+p9 <- ggplot(size_time_IB,aes(`Sample Proportion`)) +
+  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes(y=`Train time`, col = "Training Time")) +
+  geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
+  ggtitle("Item-Based CFRunning Time versus Sample Size") +
+  xlab("Proportion of Data Trained On") +
+  ylab("Time")+
+  theme(plot.title = element_text(hjust = 0.5),legend.title=element_blank())
+p9 <- ggplotly(p9)
+p9
+
+## @knitr size_vs_time_UB
+p10 <- ggplot(size_time_UB,aes(`Sample Proportion`)) +
+  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes(y=`Train time`, col = "Training Time")) +
+  geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
+  ggtitle("User-Based CF Running Time versus Sample Size") +
+  xlab("Proportion of Data Trained On") +
+  ylab("Time")+
+  theme(plot.title = element_text(hjust = 0.5),legend.title=element_blank())
+p10 <- ggplotly(p10)
+p10
+
+## @knitr size_vs_time_svd
+p11 <- ggplot(size_time_SVD,aes(`Sample Proportion`)) +
+  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes(y=`Train time`, col = "Training Time")) +
+  geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
+  ggtitle("SVD Running Time versus Sample Size") +
+  xlab("Proportion of Data Trained On") +
+  ylab("Time")+
+  theme(plot.title = element_text(hjust = 0.5),legend.title=element_blank())
+p11 <- ggplotly(p11)
+p11
