@@ -124,7 +124,7 @@ p8
 
 ## @knitr size_vs_time_IB_plot
 p9 <- ggplot(size_time_IB,aes(`Sample Proportion`)) +
-  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes( y = `Total Running time`, col = "Total Running Time")) +
   geom_line(aes(y=`Train time`, col = "Training Time")) +
   geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
   ggtitle("Item-Based CF Running Time versus Sample Size") +
@@ -136,7 +136,7 @@ p9
 
 ## @knitr size_vs_time_UB_plot
 p10 <- ggplot(size_time_UB,aes(`Sample Proportion`)) +
-  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes( y = `Total Running time`, col = "Total Running Time")) +
   geom_line(aes(y=`Train time`, col = "Training Time")) +
   geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
   ggtitle("User-Based CF Running Time versus Sample Size") +
@@ -148,7 +148,7 @@ p10
 
 ## @knitr size_vs_time_svd_plot
 p11 <- ggplot(size_time_SVD,aes(`Sample Proportion`)) +
-  geom_line(aes( y = `Total Running time`, col = model)) +
+  geom_line(aes( y = `Total Running time`, col = "Total Running Time")) +
   geom_line(aes(y=`Train time`, col = "Training Time")) +
   geom_line(aes(y = `Predict time`, col = "Prediction Time")) +
   ggtitle("SVD Running Time versus Sample Size") +
