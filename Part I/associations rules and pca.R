@@ -3,7 +3,7 @@
 # Data Prep
 ratings.dt <- fread('../data/jester-data-1.csv') #read data
 names(ratings.dt)[2:101] <- paste0('j_',c(1:100)) #Rename Jokes
-ratings.dt[,V1 := NULL] #Get rid of count
+ratings.dt <- ratings.dt[,V1 := NULL] #Get rid of count
 ratings.dt[ratings.dt ==99] <- NA #make unrated null
 
 #Create Transaction dataset
@@ -29,7 +29,7 @@ assoc_rules <- sort(assoc_rules, by="lift")
 user_a<-as(ratings_discrete[42], "itemMatrix")
 rulesMatch <- is.subset(assoc_rules@lhs, user_a)
 applicable <- (assoc_rules[which(rulesMatch ==TRUE)])
-plot(applicable[1:20], method="graph", control=list(type="items"))
+plot(applicable[1:20], method="graph")
 
 #Look a users predictions
 unlist(unique(as(rhs(applicable), "list")))
