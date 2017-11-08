@@ -79,9 +79,9 @@ reco_plot <- plot_ly(x = names(number_of_items), y = number_of_items, type = 'ba
   layout(title = "Frequency Plot of Jokes Recommended to Users", xaxis = list(title = "Jokes"), yaxis = list(title = "Recommended Frequency"))
 
 avg_ratings_plot <- plot_ly(x = names(jokes_avg_rating), y = jokes_avg_rating, type = 'bar', text = joke_text$joke_text, marker = list(color = 'rgb(158,202,225)', line = list(color = 'rgb(8,48,107)', width = 1.5))) %>%
-  layout(title = "Jokes Recommended and Their Average Ratings", xaxis = list(title = "Jokes"), yaxis = list(title = "Avg Rating"))
+  layout(title = "Jokes Recommended and Their Average Ratings - IBCF", xaxis = list(title = "Jokes"), yaxis = list(title = "Avg Rating"))
 
-subplot(reco_plot, avg_ratings_plot, nrows = 2, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE)
+plotly::subplot(reco_plot, avg_ratings_plot, nrows = 2, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE)
 
 ## @knitr item_based_brute_force
 item_similarity_cosine <- function(ratings){
@@ -179,18 +179,18 @@ cosine_ubcf_mae
 top_n_predicted_ubcf <- predict(object = ubcf_cosine, ratings_sparse, n = 5)
 first_user_reco <- top_n_predicted_ubcf@items[[1]]
 jokes_user_1 <- top_n_predicted_ubcf@itemLabels[first_user_reco]
+
+## @knitr ubcf_coverage_viz
 recc_matrix <- sapply(top_n_predicted_ubcf@items, function(x){
   colnames(ratings_sparse)[x]
 })
 recc_data <- do.call(rbind, lapply(recc_matrix, data.frame, stringsAsFactors=FALSE))
 names(recc_data) <- 'item_recommended'
 number_of_items <- factor(table(recc_data$item_recommended))
-
-## @knitr ubcf_coverage_viz
 reco_plot <- plot_ly(x = names(number_of_items), y = number_of_items, type = 'bar', text = names(number_of_items), marker = list(color = 'rgb(158,202,225)', line = list(color = 'rgb(8,48,107)', width = 1.5))) %>%
   layout(title = "Frequency Plot of Jokes Recommended to Users - UBCF", xaxis = list(title = "Jokes"), yaxis = list(title = "Recommended Frequency"))
 
 avg_ratings_plot <- plot_ly(x = names(jokes_avg_rating), y = jokes_avg_rating, type = 'bar', text = joke_text$joke_text, marker = list(color = 'rgb(158,202,225)', line = list(color = 'rgb(8,48,107)', width = 1.5))) %>%
   layout(title = "Jokes Recommended and Their Average Ratings - UBCF", xaxis = list(title = "Jokes"), yaxis = list(title = "Avg Rating"))
 
-subplot(reco_plot, avg_ratings_plot, nrows = 2, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE)
+plotly::subplot(reco_plot, avg_ratings_plot, nrows = 2, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE)
