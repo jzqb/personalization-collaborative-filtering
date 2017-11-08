@@ -41,7 +41,6 @@ err <- do.call(rbind.data.frame, avg(rat_results))
 #saveRDS(rat_results, "model info/rat_results.rds")
 #saveRDS(err, "model info/err.rds")
 
-
 ## @knitr ibcf_tune_k 
 models_to_evaluate_ib <- lapply(k_items, function(k){
   list(name = "IBCF", param = list(method = "pearson", k = k))
