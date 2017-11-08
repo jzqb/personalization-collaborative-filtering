@@ -241,3 +241,6 @@ names(size_time_SVD) <- c('Sample Proportion','Train time','Predict time','Total
 size_time_SVD$model <- "SVD Matrix Factorization"
 
 size_time_all <- rbind(size_time_IB, size_time_UB, size_time_SVD, size_time_rand)
+
+## @knitr ignore-6
+#saveRDS(size_time_all, "model info/size_time_all.rds")
