@@ -20,11 +20,7 @@ models_to_evaluate <- list(
   SVD = list(name = "SVD"),
   random = list(name = "RANDOM", param=NULL)
 )
-k_svd <- c(2,4,6,8,9,10,11,12, 14,16, 18,20) #possible values for k in svd
-
-
-library(ggplot2)
-library(gridExtra)
+k_svd <- c(2,4,6,8,9,10,11,12, 14,16, 18,20)
 
 ## @knitr compare_cf_topN
 plot(list_results, annotate = 1, legend = "topleft")
@@ -48,17 +44,23 @@ plot(list_results_ib, annotate = 1, legend = "topleft")
 title("ROC Curve Item-Based Collaborative Filtering (Pearson)")
 plot(list_results_ib, "prec/rec", annotate = 1, legend = "bottomright")
 title("Precision-Recall Item-Based Collaborative Filtering (Pearson)")
+
+## @knitr ibcf_tune_k_plots_2
 err_ib$k <- k_items
 p2 <- ggplot(err_ib, aes(x = k, y = MAE)) + geom_line(color = "blue") +
   ggtitle("Prediction Error versus Neighborhood Size\nfor Item-Based CF (pearson correlation)") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Number of Nearest Neighbors")
 p2 <- ggplotly(p2)
+p2
+
 ## @knitr ubcf_tune_nn_plots
 plot(list_results_ub, annotate = 1, legend = "topleft")
 title("ROC Curve User-Based Collaborative Filtering (Cosine)")
 plot(list_results_ub, "prec/rec", annotate = 1, legend = "bottomright")
 title("Precision-Recall User-Based Collaborative Filtering (Cosine)")
+
+## @knitr ubcf_tune_nn_plots_2
 err_ub$nn <- nn_users
 p3 <- ggplot(err_ub, aes(x = nn, y = MAE)) + geom_line(color = "red") +
   ggtitle("Prediction Error versus Neighborhood Size\nfor User-Based CF (cosine similarity)") +
@@ -73,6 +75,8 @@ title("ROC Curve SVD")
 plot(list_results_svd, "prec/rec", annotate = 1, legend = "bottomright")
 title("Precision-Recall SVD")
 err_svd$k <- k_svd
+
+## @knitr svd_tune_k_plots_2
 p7 <- ggplot(err_svd, aes(x = k, y = MAE)) + geom_line(color = "blue") +
   ggtitle("Prediction Error versus Number of Dimensions\nfor SVD") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -97,9 +101,10 @@ p4 <- ggplot(size_err_all, aes(x = train_prop, y = MAE)) + geom_line(aes(color =
   theme(plot.title = element_text(hjust = 0.5))
 p4 <- ggplotly(p4)
 p4
+
 ## @knitr err_vs_numitems_plot
 p5 <- ggplot(keep_err_all, aes(x = ratings_given, y = MAE)) + geom_line(aes(color = model)) +
-   ggtitle("Error versus Information About User Preference") +
+   ggtitle("Error versus Information\nAbout User Preference") +
    xlab("Ratings Given for Each Test User") +
    theme(plot.title = element_text(hjust = 0.5))
 p5 <- ggplotly(p5)
