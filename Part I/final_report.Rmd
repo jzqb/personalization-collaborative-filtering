@@ -237,7 +237,7 @@ Another quick way of visualizing the ratings is to identify the jokes and users 
 * We build our user-based collaborative filter with 25 [default] nearest neighbours as follows:
 
 ```{r eval = TRUE, echo = FALSE, warnings = FALSE, messages = FALSE}
-<<source_ubcf_data>>
+<<sourcing_ubcf_data>>
 ```
 
 ```{r eval=TRUE, echo=TRUE}
@@ -250,6 +250,10 @@ Another quick way of visualizing the ratings is to identify the jokes and users 
 ```{r}
 <<ubcf_mae>>
 ```
+```{r echo=TRUE, eval=FALSE}
+<<top_n_ubcf>>
+```
+
 
 * The coverage of this model is once again visualized in the following plot:
 ```{r}
