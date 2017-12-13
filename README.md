@@ -1,4 +1,4 @@
-# Collabortive Filter: Reccomending Jokes
+# Collabortive Filter: Recommending Jokes
 Recommender Systems are indispensable tools today to provide personalized user experience. In this project, we build and evaluate memory based and model based recommender systems for jokes. We will be using the recommenderlab package in R. However, we will also demonstrate brute force coding approach to collaborative filtering.
 
 ## Full Report
