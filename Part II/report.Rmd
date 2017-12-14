@@ -26,8 +26,20 @@ font-size: 12pt;
 </style>
 
 ## Introduction and Objectives
+Not many years ago, it was inconceivable that the same person would listen to the Beatles, Vivaldi, and Lady Gaga on their morning commute. But, the glory days of Radio DJs have passed, and musical gatekeepers have been replaced with personalizing algorithms and unlimited streaming services.   
+
+While the public’s now listening to all kinds of music, algorithms still struggle in key areas. Without enough historical data, how would an algorithm know if listeners will like a new song or a new artist? And, how would it know what songs to recommend brand new users?   
+
+In this project, we aim to predict the chances of a user listening to a song repetitively after the first observable listening event within a time window was triggered. If there are recurring listening event(s) triggered within a month after the user’s very first observable listening event, its target is marked 1, and 0 otherwise.   
+Our dataset come from a Kaggle competition, where KKBOX provides a training data set consisting of information of the first observable listening event for each unique user-song pair within a specific time duration. Metadata of each unique user and song pair is also provided.   
+
+The train and the test data are selected from users listening history in a given time period. The train and test sets are split based on time, and the split of public/private are based on unique user/song pairs.   
+
 ## Music Recommendation Rationale
+Automatic music recommendation has become an increasingly relevant problem in recent years, since a lot of music is now sold and consumed digitally. In recent years, the music industry has shifted more and more towards digital distribution through
+online music stores and streaming services such as iTunes, Spotify, Grooveshark and Google Play.
 ## Dataset and Exploration
+
 ## Collaborative Filter
 ## Factorization Machines
 ## Content Based Recommender
