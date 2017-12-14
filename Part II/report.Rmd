@@ -1,0 +1,42 @@
+---
+title: "Music Recommendation - Hybrid Recommender System using Factorization Machines, Content Based Recommenders and SVD++"
+subtitle: |
+  Columbia University
+  
+  IEOR 4571 - Personalization Theory and Applications - Final Report Part II
+author: "Gaurav Singh, Carolyn Silverman, Cindy Wu, Maura Fitzerald"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: paper
+    toc: true
+---
+<style type="text/css">
+body {
+text-align: justify;
+font-size: 12pt;
+max-width: 1200px;
+margin-left: 100px;
+margin-right: 100px;
+}
+body .main-container {
+max-width: 1200px;
+font-size: 12pt;
+}
+</style>
+
+## Introduction and Objectives
+## Music Recommendation Rationale
+## Dataset and Exploration
+## Collaborative Filter
+## Factorization Machines
+## Content Based Recommender
+### Preprocessing and Feature Extraction
+### User Profiles and Exploration
+### knn Classification Model
+### Evaluation
+## SVD++
+## Hybridization
+### Results
+## Conclusion
+## References
