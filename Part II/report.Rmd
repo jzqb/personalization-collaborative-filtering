@@ -9,6 +9,7 @@ date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   html_document:
     theme: paper
+    df_print: paged
     toc: true
 ---
 <style type="text/css">
@@ -36,6 +37,7 @@ read_chunk('content_based/read_filter.R')
 read_chunk('content_based/feature_generation.R')
 read_chunk('content_based/collaborative_filter.R')
 read_chunk('content_based/knn.R')
+options(tibble.print_max = 5, tibble.print_min = 5)
 ```
 
 ## Introduction and Objectives
@@ -51,17 +53,253 @@ The train and the test data are selected from users listening history in a given
 ## Music Recommendation Rationale
 Automatic music recommendation has become an increasingly relevant problem in recent years, since a lot of music is now sold and consumed digitally. In recent years, the music industry has shifted more and more towards digital distribution through
 online music stores and streaming services such as iTunes, Spotify, Grooveshark and Google Play.
+
 ## Dataset and Exploration
 
 ```{r,eval=FALSE}
 <<packages_and_libraries>>
 ```
 
-We read and work with the filtered data.
+The original dataset contains 7,377,418 observations, where each observation corresponds to the first observable listening event for each unique user-song pair. In order to train our models, we filter the data by choosing songs with at least 1000 occurrences and users with at least 500 occurrences. We then train on 75% of the filtered dataset and test on the other 25%. This results in a training set of 869,783 observations and a testing set of 289,928 observations.
+
 ```{r,eval=FALSE}
 <<reading_filtering_data>>
 ```
 
+```{r, echo = FALSE}
+load('EDA_data.RData')
+```
+
+### Training Data
+Let's start by examining how each variable in the training_data affects the target. We base our exploratory data analysis off of the following kernel: https://www.kaggle.com/adiamaan/eda-and-feature-engineering
+```{r show train, message=FALSE, result='asis', warning=FALSE, echo=FALSE}
+training_data
+```
+
+Defining useful functions: 
+```{r train - useful functions}
+## ggplot setting for readable labels
+readable_labs <- theme(axis.text=element_text(size=12),
+                     axis.title=element_text(size=14),
+                     plot.title = element_text(hjust = 0.5))
+
+# Function to dislpay count of each category of the column and plot how it affects target
+target_vs_column <-function(df, col_name, x , y, title){
+    temp_df <- df %>% 
+            group_by_(col_name) %>% 
+            summarize(count = n(), mean_target = mean(target)) %>% 
+            arrange(desc(mean_target)) 
+    
+    df_plot <- temp_df %>%  
+              ggplot(aes_string(col_name, "mean_target")) + 
+              geom_col(aes(fill=count)) +
+              scale_fill_gradient(low='turquoise', high = 'violet')+
+              coord_flip() +
+              labs(x = x,
+                   y = y,
+                   title= title) +
+              readable_labs
+    print(df_plot)
+    return (temp_df)
+}
+
+# Function to group songs and user by count and check it agains mean_target
+target_vs_colcount <- function(df, col_name, x, y, title){
+    df %>% 
+      group_by_(col_name) %>% 
+      summarize(count = n(), mean_target = mean(target)) %>% 
+      group_by(count) %>% 
+      summarize(new_count = n(), avg_target = mean(mean_target)) %>% 
+      rename(no_of_items = new_count, occurence = count) %>% 
+      arrange(desc(avg_target)) %>% 
+      ggplot(aes(occurence, avg_target)) +
+        geom_line(color='turquoise') +
+        geom_smooth(color='turquoise') +
+        labs(x = x,
+             y = y,
+             title= title) +
+        readable_labs
+}
+```
+
+#### Song count and User count vs target {.tabset}
+
+##### Song count vs Target
+
+Songs are grouped together and their count is checked against the target variable. The plot below shows the relationship between discoverability and mean target value. It is clear from the plot that the more a song occurs, the more it is discoverable by the user.
+
+```{r song count, message=FALSE, warning=FALSE}
+target_vs_colcount(training_data, "song_id", "Song Occurence", "Target", "Song Occurence vs Target")
+```
+
+##### User count vs Target
+
+There is also a trend between how frequent of a listener the user is and the likelihood that the will listen to a song repetitively.
+
+```{r user count, message=FALSE, warning=FALSE}
+target_vs_colcount(training_data, "msno", "User Occurence", "Target", "User Occurence vs Target")
+```
+
+
+#### Target is unbalanced
+
+Finally, we note that the target variable in our filtered dataset is not balanced. About 63% of the observations in the training data have a target value of one.  
+
+```{r}
+training_data %>% 
+  group_by(target) %>% 
+  count
+```
+
+
+### Members
+
+Let's move on to the Members metadata
+
+```{r display members, echo=FALSE}
+members
+```
+
+In the members dataframe, city, bd, gender, registered via are categorical vairables and registration init and expiration date are dates. We choose not to use registered via or the date features in our models, so we will not explore these variables here.
+
+Again we define some useful functions for exploration to help us determine how each of these variables affects the target:
+
+```{r members function}
+members_colgroup <- function(df,col_name, x, y, title, xmin, xmax, ymin, ymax){
+                      
+    temp_df <- df %>% 
+                  group_by_(col_name) %>% 
+                  count() %>% 
+                  arrange(desc(n))
+    
+    df_plot <- temp_df %>% 
+                    ggplot(aes_string(col_name, "n")) + 
+                    geom_col(fill='goldenrod2') + 
+                    labs(x = x,
+                         y = y,
+                         title = title) +
+                    xlim(xmin, xmax) +
+                    ylim(ymin, ymax) +
+                    readable_labs
+    
+    print(df_plot)
+    return(temp_df)
+
+}
+```
+
+#### Distribution of city, bd(age), gender {.tabset}
+
+##### Age
+
+There seem to be some outliers in the age field, so we will have to clean these before we build our models.  
+Sorted bd (age) vs Frequency is shown in the tibble as well as the graph. There are 1578 records with 0 as age. This could be either outliers or missing values. We plot in the age range 1-100 to show the real distribution.  
+
+```{r age tab, warning=TRUE}
+members_colgroup(members, "bd", "Age", "Frequency", "Age Distribution", 1, 100, 0, 200)
+```
+
+##### City
+
+```{r city tab, warning=TRUE}
+members_colgroup(members, "city", "City", "Frequency", "City Distribution", 0, 25, 0, 1500)
+```
+
+
+##### Gender
+
+Male and female are almost equal. We have a lot of missing values, as well.
+```{r gender tab, warning=TRUE}
+members %>% 
+  group_by(gender) %>% 
+  count
+```
+
+### Songs
+
+Finally, let's examine the available song metadata. These features will be useful for both our content-based recommender and factorization machine model.
+
+```{r songs display}
+songs
+```
+
+#### Top Items{.tabset}
+
+Let's see top 100 frequent items in each category,
+
+```{r top 100 function}
+top_100 <- function(df, col_name)
+{
+  temp_df <- df %>% 
+    group_by_(col_name) %>% 
+    count %>% 
+    arrange(desc(n)) %>% 
+    print
+  
+  return(temp_df)
+}
+```
+
+
+##### Top 100 Artists
+
+```{r top 100 artist}
+artist_count <- top_100(songs, "artist_name")
+```
+
+##### Top 100 Lyricist
+
+```{r top 100 lyricist}
+lyricist_count <- top_100(songs, "lyricist")
+```
+
+##### Top 100 composer
+
+```{r top 100 composer}
+composer_count <- top_100(songs, "composer")
+```
+
+##### Top 100 Language
+
+```{r top 100 language}
+language_count <- top_100(songs, "language")
+```
+
+
+`r sum(songs$artist_name == songs$lyricist)` songs have same artist and lyricist name.  
+`r sum(songs$lyricist == songs$composer)` songs have same lyricist and composer name.     
+`r sum(songs$artist_name == songs$composer)` songs have same artist and composer name.   
+`r sum(songs$artist_name == songs$lyricist)`songs have same artist and lyricist name.  
+
+
+
+##### Top Genre's
+  
+Genre id is a multi label column with a minumum label of 1 to a maximum label of 8.  
+There are 192 unique genres. There are some missing values as well.
+
+```{r top genres, message=FALSE, warning=FALSE}
+genre_count <- songs %>% 
+                  separate(genre_ids, c("one", "two", "three", "four", "five", "six", 
+                                        "seven", "eight"), extra="merge") %>% 
+                  select(one:eight)%>% 
+                  gather(one:eight, key="nth_id", value="genre_ids", na.rm=TRUE) %>% 
+                  group_by(genre_ids) %>% 
+                  count %>% 
+                  arrange(desc(n)) %>% 
+                  print()
+```
+
+#### Distribution of song length
+
+```{r song length dist, message=FALSE, warning=FALSE}
+songs %>% 
+  mutate(song_length = song_length/6e4) %>% 
+  ggplot(aes(song_length)) +
+  geom_histogram(binwidth = 0.25, fill='darkorchid3') +
+  labs(x='Song Length', y = 'Frequency', title = 'Distribution of song length') +
+  xlim(0, 10)
+```
 
 ## Collaborative Filter
 We build item based and user based collaborative filter model by using the recommenderlab package to take it as a baseline for the future models. Important parameters for the model are:   
@@ -104,7 +342,7 @@ We first explore factorization machines. At their core, factorization machines a
 * $V$ – an $n \times k$ matrix, where the inner product of the $i^{th}$ and $j^{th}$ row of $V$ is the weight of the interaction between the $i^{th}$ and $j^{th}$ input variable.
 
 The model is written as:
-(insert model eqn here)
+$$\hat{y}(\mathbf{x}) := w_0 + \sum_{j=1}^pw_jx_j + \sum_{j=1}^p \sum_{j'=j+1}^p x_jx_{j'} \sum_{f=1}^kv_{j,f}v_{j'\,f}$$
 
 ![](FM/img/FM_img.png)
 
