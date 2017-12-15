@@ -25,6 +25,14 @@ font-size: 12pt;
 }
 </style>
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(knitr)
+load('FM/FM.RData')
+source('Requirements.R')
+read_chunk('FM/factorization_machines.R')
+read_chunk('Evaluation/Evaluation.R')
+```
+
 ## Introduction and Objectives
 Not many years ago, it was inconceivable that the same person would listen to the Beatles, Vivaldi, and Lady Gaga on their morning commute. But, the glory days of Radio DJs have passed, and musical gatekeepers have been replaced with personalizing algorithms and unlimited streaming services.   
 
@@ -41,7 +49,127 @@ online music stores and streaming services such as iTunes, Spotify, Grooveshark 
 ## Dataset and Exploration
 
 ## Collaborative Filter
+
 ## Factorization Machines
+### Model Summary:
+
+We first explore factorization machines. At their core, factorization machines allow us to model feature-rich datasets by including higher order interactions weighted by the inner product of latent vectors. As a result, we can estimate reliable parameters even in highly sparse data! Factorization machines consist of the following parameters that must be learned (where n is the number of features in the dataset and k is the dimenstionality of the latent features):
+  
+* $w_0$ – the global bias term  
+* $\mathbf{w}$ – a vector of weights for each of the n input variables  
+* $V$ – an $n \times k$ matrix, where the inner product of the $i^{th}$ and $j^{th}$ row of $V$ is the weight of the interaction between the $i^{th}$ and $j^{th}$ input variable.
+
+The model is written as:
+(insert model eqn here)
+
+![](FM/img/FM_img.png)
+
+The image above (from Rendle [2010]) shows the format the data must be in to train a factorization machine model. Each feature vector $\mathbf{x}$ is used to predict each target value *$y$*. In our dataset, we one hot encode songs (song_id) and members (msno). Additionally, we include the following features from the metadata to improve accuracy of predictions:  
+
+Song metadata:
+  
+* Language  
+* Artist name  
+* Genre (first listed if multiple)  
+* Number of genres  
+* Song length  
+
+Member metadata:  
+  
+* City  
+* Gender  
+* Birthday (age)    
+
+Additional features:  
+  
+* Source system tab  
+* Source screen name  
+* Source type  
+
+We begin by merging the training dataset with the song and member metadata and doing some data cleaning and feature engineering:
+
+```{r, eval=FALSE}
+<<FM_merge_clean>>
+```
+
+The dataset is large, so for the sake of efficiency, we use the R library libFMexe which is an interface to the C++  libFM library by Steffen Rendle. This allows us to run many models and tune k, the hyperparameter for the number of latent dimensions. 
+
+While we explored factorization machines with several different learning methods (e.g. ALS and SGD), the model we present here is a second order factorization machine using Markov chain Monte Carlo. Stochastic gradient descent and alternating least squares require additional parameter tuning to determine the optimal learning rate (SGD) and regularization terms (SGD and ALS), which is simply not feasible given the size of the data set and our compute resources. Furthermore, from preliminary models, MCMC appeared to outperform both SGD and ALS, so the choice of MCMC as the learning method for the model is obvious to maximize prediction accuracy.
+
+### Tuning Hyperparameters
+
+#### Choosing k:
+
+We use 3-fold cross validation with 100 iterations of MCMC to determine the optimal number of latent dimensions k. For each fold, the model outputs a vector of probabilities equal to the size of the held out data. This vector is converted to a vector of binary values based on a probability threshold of 0.5. The accuracy is then taken to be the number of target values that the model correctly predicted divided by the total number of target values in the held out data. The error rate is (1 – accuracy). 
+
+```{r, eval=FALSE}
+<<cv_k>>
+```
+
+We analyze the results of the cross validation parameter tuning by plotting the mean error rate across the folds as a function of k. We choose k with the lowest average error rate across the three folds, or equivalently the highest average accuracy. We note that while the error rate for the model to compa re models. The following plot displays the error rate as a function of k, the number of latent dimensions. We also display a table of the mean error rate across the three folds (with standard error) for each k.
+
+```{r}
+<<tune_cv>>
+<<fm_k_cv_results>>
+```
+
+#### Choosing initialization standard deviation
+Next, we use cross-validation to determine the optimal standard deviation initialization. This parameter corresponds to the standard deviation of the normal distribution that is used for initializing the parameters $V$. It is important that we choose a good value for this parameter so that the error rate converges quickly. Again, we use 3-fold cross validation with 100 iterations of MCMC to tune this parameter.
+
+```{r, eval=FALSE}
+<<cv_sd>>
+```
+
+```{r}
+<<fm_sd_cv_results>>
+```
+
+The optimal standard deviation is clearly .1.
+
+### FM Model
+From the parameter tuning above, we determine that k = 25 latent dimensions gives us the highest accuracy. Additionally, an initialized standard deviation of 0.1 leads to the quickest error rate convergence. Thus, we will set the hyperparamters to these values for our final model. We will train our final factorization machine model using 500 iterations of MCMC to ensure convergence in error rate. We then use this model to generate predictions for the testing dataset. 
+
+```{r, eval = FALSE}
+<<fm_model>>
+```
+
+We look at the training and testing error as a function of the number of iterations of MCMC to ensure the error rate converges in 500 iterations.
+
+```{r}
+<<err_convergence>>
+```
+
+The decrease in error rate is very small after approximately 300 iterations, for we conclude that 500 iterations is sufficient to train the model.
+
+### Evaluation
+Finally, we evaluate the model according to the following metrics:  
+
+* accuracy  
+* error   
+* precision  
+* recall  
+* F1  
+* auc
+  
+Additionally, we display an ROC curve for the predictions.
+
+We start by writing a generic evaluation function, which we will use to compare the performance of different models:
+
+```{r}
+<<evaluate_function>>
+```
+
+We then call this function on the output probabilities of the FM model:
+```{r,eval=FALSE}
+<<evaluate_FM>>
+```
+
+Finally, we display the evaluation metrics and the ROC plot.
+```{r}
+<<evaluate_FM_print>>
+```
+
+
 ## Content Based Recommender
 ### Preprocessing and Feature Extraction
 ### User Profiles and Exploration
