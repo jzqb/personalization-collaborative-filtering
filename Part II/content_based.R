@@ -226,6 +226,47 @@ for(active_user in user_key$msno){
   print(paste(active_user, "complete"))
 }
 total_prediction_matrix$random_prediction <- round(runif(n = nrow(total_prediction_matrix), min = 0, max = 1))
+total_prediction_matrix$score = as.numeric(as.character(total_prediction_matrix$prediction_prob))
+total_prediction_matrix$score[total_prediction_matrix$prediction == 0] <- 1-total_prediction_matrix$score[total_prediction_matrix$prediction == 0]
+
+evaluate <- function(scores, target){
+  ## Evaluate Predictions
+  ## input 
+  # scores: vector of scores 
+  # (i.e. probability that an observation should have target value 1)
+  # target: vector of actual target values
+  ## returns 
+  # dataframe of evaluation metrics
+  # confusion matrix for predicted and actual target values
+  # roc object for plotting
+  
+  pred.target <- ifelse(scores >= 0.5, 1, 0)
+  accuracy <- sum(pred.target == target)/length(target)
+  error <- 1 - accuracy
+  
+  conf.mat <- table(pred.target, target, dnn = c("predicted","actual"))
+  precision <- conf.mat[2,2]/sum(conf.mat[2,])
+  recall <- conf.mat[2,2]/sum(conf.mat[,2])
+  F1 <- 2 * (precision*recall/(precision + recall))
+  auc <- auc(target, scores)
+  eval.metrics <- data.frame(cbind(accuracy, error, precision, recall, F1, auc))
+  
+  roc <- roc(target, scores, direction="<")
+  
+  return(list(eval.metrics, conf.mat, roc))
+}
+
+content_based_eval <- evaluate(total_prediction_matrix$score, total_prediction_matrix$target)
+content_based_eval_plot <- ggroc(content_based_eval[[3]], alpha = 0.5, colour = "blue", linetype = 2, size = 2) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+## @knitr evaluate_FM_print
+content_based_eval[[1]] #print evaluation metrics
+content_based_eval[[2]] #print confusion matrix
+content_based_eval_plot + ggtitle('ROC Curve for Content Based Recommender') +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
 conf_matrix <- table(total_prediction_matrix$target, total_prediction_matrix$prediction)
 conf_matrix
 (conf_matrix[1,1]+conf_matrix[2,2])/sum(conf_matrix)

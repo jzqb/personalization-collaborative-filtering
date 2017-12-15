@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gaurav Singh, Carolyn Silverman, Cindy Wu, Maura Fitzerald" />
 
-<meta name="date" content="2017-12-14" />
+<meta name="date" content="2017-12-15" />
 
 <title>Music Recommendation - Hybrid Recommender System using Factorization Machines, Content Based Recommenders and SVD++</title>
 
@@ -121,7 +121,7 @@ $(document).ready(function () {
 <h3 class="subtitle"><em><p>Columbia University</p>
 <p>IEOR 4571 - Personalization Theory and Applications - Final Report Part II</p></em></h3>
 <h4 class="author"><em>Gaurav Singh, Carolyn Silverman, Cindy Wu, Maura Fitzerald</em></h4>
-<h4 class="date"><em>14 December 2017</em></h4>
+<h4 class="date"><em>15 December 2017</em></h4>
 
 </div>
 
@@ -129,7 +129,11 @@ $(document).ready(function () {
 <ul>
 <li><a href="#introduction-and-objectives">Introduction and Objectives</a></li>
 <li><a href="#music-recommendation-rationale">Music Recommendation Rationale</a></li>
-<li><a href="#collaborative-filter">Collaborative Filter</a></li>
+<li><a href="#collaborative-filter">Collaborative Filter</a><ul>
+<li><a href="#item-based-cf">Item Based CF</a></li>
+<li><a href="#user-based-cf">User Based CF</a></li>
+<li><a href="#baseline-accuracy-measures">Baseline Accuracy Measures</a></li>
+</ul></li>
 <li><a href="#factorization-machines">Factorization Machines</a><ul>
 <li><a href="#model-summary">Model Summary:</a></li>
 <li><a href="#tuning-hyperparameters">Tuning Hyperparameters</a></li>
@@ -168,7 +172,12 @@ font-size: 12pt;
 load('FM/FM.RData')
 source('Requirements.R')
 read_chunk('FM/factorization_machines.R')
-read_chunk('Evaluation/Evaluation.R')</code></pre>
+read_chunk('Evaluation/Evaluation.R')
+read_chunk('libraries.R')
+read_chunk('read_filter.R')
+read_chunk('feature_generation.R')
+read_chunk('collaborative_filter.R')
+read_chunk('knn.R')</code></pre>
 <div id="introduction-and-objectives" class="section level2">
 <h2>Introduction and Objectives</h2>
 <p>Not many years ago, it was inconceivable that the same person would listen to the Beatles, Vivaldi, and Lady Gaga on their morning commute. But, the glory days of Radio DJs have passed, and musical gatekeepers have been replaced with personalizing algorithms and unlimited streaming services.</p>
@@ -183,6 +192,46 @@ Our dataset come from a Kaggle competition, where KKBOX provides a training data
 </div>
 <div id="collaborative-filter" class="section level2">
 <h2>Collaborative Filter</h2>
+<p>We build item based and user based collaborative filter model by using the recommenderlab package to take it as a baseline for the future models. Important parameters for the model are:<br />
+* Similarity Measure: Jaccard, as the ratings are binary * Number of neighbors: 30</p>
+<div id="item-based-cf" class="section level3">
+<h3>Item Based CF</h3>
+<pre class="r"><code>training_sparse &lt;- as(as.matrix(user_item_rating[-1]), 'realRatingMatrix')
+
+ibcf &lt;- Recommender(data = training_sparse, method = &quot;IBCF&quot;, parameter = list(method = &quot;Jaccard&quot;))
+predicted_ratings &lt;- predict(ibcf, training_sparse, type = 'ratings')
+predicted_ratings &lt;- as(predicted_ratings, 'matrix')
+predicted_ratings &lt;- as.data.frame(predicted_ratings)
+predicted_ratings$msno &lt;- user_item_rating$msno
+predicted_ratings_melt &lt;- melt(predicted_ratings, id.vars = 'msno', variable.name = 'song_id')
+results_ibcf &lt;- merge(testing_data, predicted_ratings_melt, by = c('msno', 'song_id'))
+results_ibcf$predicted_class &lt;- 1
+results_ibcf$predicted_class[results_ibcf$value &lt; 0.5] &lt;- 0</code></pre>
+</div>
+<div id="user-based-cf" class="section level3">
+<h3>User Based CF</h3>
+<pre class="r"><code>ubcf &lt;- Recommender(data = training_sparse, method = &quot;UBCF&quot;, parameter = list(method = &quot;Jaccard&quot;))
+predicted_ratings &lt;- predict(ubcf, training_sparse, type = 'ratings')
+predicted_ratings &lt;- as(predicted_ratings, 'matrix')
+predicted_ratings &lt;- as.data.frame(predicted_ratings)
+predicted_ratings$msno &lt;- user_item_rating$msno
+predicted_ratings_melt &lt;- melt(predicted_ratings, id.vars = 'msno', variable.name = 'song_id')
+results_ubcf &lt;- merge(testing_data, predicted_ratings_melt, by = c('msno', 'song_id'))
+results_ubcf$predicted_class &lt;- 1
+results_ubcf$predicted_class[results_ubcf$value &lt; 0.5] &lt;- 0
+results_ubcf$random_class &lt;- 1</code></pre>
+</div>
+<div id="baseline-accuracy-measures" class="section level3">
+<h3>Baseline Accuracy Measures</h3>
+<pre class="r"><code>conf_matrix_cf_ibcf &lt;- table(results_ibcf$target, results_ibcf$predicted_class)
+(conf_matrix_cf_ibcf[1,1]+conf_matrix_cf_ibcf[2,2])/sum(conf_matrix_cf_ibcf)
+conf_matrix_cf_ubcf &lt;- table(results_ubcf$target, results_ubcf$predicted_class)
+conf_matrix_cf_ubcf
+ubcf_accuracy &lt;- (conf_matrix_cf_ubcf[1,1]+conf_matrix_cf_ubcf[2,2])/sum(conf_matrix_cf_ubcf)
+conf_matrix_rand &lt;- table(results$target, results$random_class)
+conf_matrix_rand
+(conf_matrix_rand[2,1])/sum(conf_matrix_rand)</code></pre>
+</div>
 </div>
 <div id="factorization-machines" class="section level2">
 <h2>Factorization Machines</h2>
@@ -445,14 +494,112 @@ FM.roc.plot &lt;- ggroc(FM.eval[[3]], alpha = 0.5, colour = &quot;blue&quot;, li
 </div>
 <div id="content-based-recommender" class="section level2">
 <h2>Content Based Recommender</h2>
+<p>In this section, we build the content based recommendation from scratch without using any ready to build package.</p>
+<ul>
+<li>Content-based systems are designed to exploit scenarios in which items can be described with descriptive sets of attributes.</li>
+<li>This approach is particularly useful when the item is new, and there are few ratings available for that item.</li>
+<li>Unlike collaborative systems, which explicitly leverage the ratings of other users in addition to that of the target user, content-based systems largely focus on the target user’s own ratings and the attributes of the items liked by the user. Therefore, the other users have little, if any, role to play in content-based systems.</li>
+<li>Content-based systems are largely used in scenarios in which a significant amount of attribute information is available at hand. In this case, we have structured data in the form of song length, genres, artists, composer, lyricist and language.</li>
+</ul>
+<p>We do the following step to build our content based recommender by utilising these song features.</p>
 <div id="preprocessing-and-feature-extraction" class="section level3">
 <h3>Preprocessing and Feature Extraction</h3>
+<pre class="r"><code>library(tidyverse)
+library(data.table)
+library(Hmisc)
+library(class)
+library(recommenderlab)</code></pre>
+<p>We read and work with the filtered data.</p>
+<pre class="r"><code>options(tibble.print_max = 5, tibble.print_min = 5)
+setwd(&quot;~/Desktop/drive/dsi/fall-17/personalization/Part II&quot;)
+rm(list= ls())
+train &lt;- as.tibble(fread('data/train.csv'))
+songs &lt;- as.tibble(fread('data/songs.csv'))
+song_extra_info &lt;- as.tibble(fread('data/song_extra_info.csv'))
+
+ratings &lt;- as.data.table(train[c('msno', 'song_id', 'target')])
+
+filter_song_data &lt;- as.data.frame(table(ratings$song_id))
+filter_user_data &lt;- as.data.frame(table(ratings$msno))
+
+names(filter_song_data) &lt;- c('song_id', 'count')
+names(filter_user_data) &lt;- c('msno', 'count')
+ratings$song_count &lt;- filter_song_data$count[match(ratings$song_id, filter_song_data$song_id)]
+ratings$user_count &lt;- filter_user_data$count[match(ratings$msno, filter_user_data$msno)]
+
+sc = 1000
+uc = 500
+filter_data &lt;- subset(ratings, ratings$song_count&gt;= sc &amp; ratings$user_count &gt;=uc)
+nrow(filter_data)/nrow(ratings)
+paste('Users:', length(unique(filter_data$msno)))
+paste('Songs:', length(unique(filter_data$song_id)))
+
+user_key &lt;- as.data.frame(cbind(unique(filter_data$msno),c(1:length(unique(filter_data$msno)))))
+names(user_key) &lt;- c('user_code', 'msno')
+song_key &lt;- as.data.frame(cbind(unique(filter_data$song_id), c(1:length(unique(filter_data$song_id)))))
+names(song_key) &lt;- c('song_code', 'song_id')
+filter_data$msno &lt;- user_key$msno[match(filter_data$msno,user_key$user_code)]
+filter_data$song_id &lt;- song_key$song_id[match(filter_data$song_id, song_key$song_code)]
+
+
+set.seed(666)
+train_prop = 0.75
+train_test_split &lt;- function(ratings, train_proportion = 0.8){
+  sample_size &lt;- floor(train_proportion*nrow(ratings))
+  train_ind &lt;- sample(seq_len(nrow(ratings)), size = sample_size)
+  train_data &lt;- ratings[train_ind,]
+  test_data &lt;- ratings[-train_ind,]
+  split_data &lt;- list('train_data' = train_data, 'test_data' = test_data)
+  return(split_data)
+}
+split_data &lt;- train_test_split(filter_data,0.75)
+training_data &lt;- split_data$train_data
+testing_data &lt;- split_data$test_data
+songs$song_id &lt;- song_key$song_id[match(songs$song_id, song_key$song_code)]
+songs &lt;- subset(songs, songs$song_id %in% filter_data$song_id)
+song_extra_info$song_id &lt;- song_key$song_id[match(song_extra_info$song_id, song_key$song_code)]
+song_extra_info &lt;- subset(song_extra_info, song_extra_info$song_id %in% filter_data$song_id)
+
+training_data &lt;- as.tibble(training_data)</code></pre>
 </div>
 <div id="user-profiles-and-exploration" class="section level3">
 <h3>User Profiles and Exploration</h3>
 </div>
 <div id="knn-classification-model" class="section level3">
 <h3>knn Classification Model</h3>
+<p>We use k-nearest neighbours to predict the classes of the user and song pairs.</p>
+<pre class="r"><code>total_prediction_matrix &lt;- data.frame()
+near_neighbors = 2^c(2:5)
+for(active_user in user_key$msno){
+  items_rated &lt;- training_data$song_id[training_data$msno == active_user]
+  train &lt;- subset(big_flat_item_features, big_flat_item_features$song_id %in% items_rated)
+  user_target &lt;- subset(training_data[1:3], training_data$msno == active_user)
+  user_target$target &lt;- as.factor(user_target$target)
+  train$target &lt;- user_target$target[match(train$song_id, user_target$song_id)]
+  train &lt;- train[-1]
+  train_knn &lt;- train[1:2035]
+  #test_knn &lt;- train[1:2035]
+  cl &lt;- train$target
+  
+  items_not_rated &lt;- testing_data$song_id[testing_data$msno == active_user]
+  test &lt;- subset(big_flat_item_features, big_flat_item_features$song_id %in% items_not_rated)
+  
+  user_test_target &lt;- subset(testing_data, testing_data$msno == active_user)
+  test$target &lt;- testing_data$target[match(test$song_id, testing_data$song_id)]
+  test_knn = test[2:2036]
+  for(nn in near_neighbors){
+    preds &lt;- knn(train_knn, test_knn, cl, k = nn, prob=TRUE)
+    prediction_matrix &lt;- as.data.frame(cbind(active_user, test$song_id, test$target, attributes(preds)$prob, as.numeric(as.character(preds)), nn))
+    names(prediction_matrix) &lt;- c('active_user', 'song_id', 'target', 'prediction_prob', 'prediction', 'nn')
+    total_prediction_matrix &lt;- rbind(total_prediction_matrix, prediction_matrix)
+    
+  }
+  print(paste(active_user, &quot;complete&quot;))
+}
+total_prediction_matrix$random_prediction &lt;- round(runif(n = nrow(total_prediction_matrix), min = 0, max = 1))
+conf_matrix &lt;- table(total_prediction_matrix$target, total_prediction_matrix$prediction)
+conf_matrix
+(conf_matrix[1,1]+conf_matrix[2,2])/sum(conf_matrix)</code></pre>
 </div>
 <div id="evaluation-1" class="section level3">
 <h3>Evaluation</h3>
