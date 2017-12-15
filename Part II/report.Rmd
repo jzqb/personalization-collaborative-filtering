@@ -31,11 +31,11 @@ load('FM/FM.RData')
 source('Requirements.R')
 read_chunk('FM/factorization_machines.R')
 read_chunk('Evaluation/Evaluation.R')
-read_chunk('libraries.R')
-read_chunk('read_filter.R')
-read_chunk('feature_generation.R')
-read_chunk('collaborative_filter.R')
-read_chunk('knn.R')
+read_chunk('content_based/libraries.R')
+read_chunk('content_based/read_filter.R')
+read_chunk('content_based/feature_generation.R')
+read_chunk('content_based/collaborative_filter.R')
+read_chunk('content_based/knn.R')
 ```
 
 ## Introduction and Objectives
@@ -68,6 +68,9 @@ We build item based and user based collaborative filter model by using the recom
 * Similarity Measure: Jaccard, as the ratings are binary
 * Number of neighbors: 30
 
+```{r, eval=TRUE, echo=FALSE}
+load('content_based/content_cf.RData')
+```
 ### Item Based CF
 ```{r, eval=FALSE}
 <<item_based_collaborative_filter>>
@@ -77,12 +80,19 @@ We build item based and user based collaborative filter model by using the recom
 ```{r, eval=FALSE}
 <<user_based_collaborative_filter>>
 ```
+
 ### Baseline Accuracy Measures
 ```{r, eval=FALSE}
 <<item_based_collaborative_filter_accuracy>>
 <<user_based_collaborative_filter_accuracy>>
 <<random_accuracy>>
 ```
+```{r, eval=TRUE}
+<<cf_conf_matrices>>
+<<cf_accuracy_plots>>
+```
+
+* We can see that item-based and user-based collaborative filters are better performing than recommending every song to the user.
 
 ## Factorization Machines
 ### Model Summary:
@@ -211,23 +221,39 @@ In this section, we build the content based recommendation from scratch without 
 * This approach is particularly useful when the item is new, and there are few ratings available for that item.
 * Unlike collaborative systems, which explicitly leverage the ratings of other users in addition to that of the target user, content-based systems largely focus on the target user’s own ratings and the attributes of the items liked by the user. Therefore, the other users have little, if any, role to play in content-based systems.
 * Content-based systems are largely used in scenarios in which a significant amount of attribute information is available at hand. In this case, we have structured data in the form of song length, genres, artists, composer, lyricist and language.   
+* The general architecture of a content based recommender can be visualized through the following diagram.
+![](content_based/4.png)
 
 We do the following step to build our content based recommender by utilising these song features.
 
 ### Preprocessing and Feature Extraction
+* In the feature extraction phase, the descriptions of various items are extracted. Although it is possible to use any kind of representation, such as a multidimensional data representation, the most common approach.
+* We generate one hot encoded vectors for the items to be represented in the feature space.
 
+```{r,eval=FALSE}
+<<content_feature_generation>>
+```
+```{r,eval=TRUE, echo=TRUE}
+<<big_flat_item_features_sample>>
+```
 
-### User Profiles and Exploration
-
+We now have our items represented as feature vectors 
 
 ### knn Classification Model
+* The nearest neighbor classifier is one of the simplest classification techniques, and it can be implemented in a relatively straightforward way.
+* We construct model for each user based on his/her ratings for the items. Content based recommender system can be thought of as a classification problem for each user.
 
-We use k-nearest neighbours to predict the classes of the user and song pairs.
 ```{r,eval=FALSE}
 <<content_knn_prediction>>
 ```
 
 ### Evaluation
+* We compare the content based model with the collaborative filter models and see that it is better than random prediction and outperforms user-based collaborative filtering, however, the number of neighbors in the knn model were restricted to 32, thus under performing item-based collaborative filter.
+
+```{r,eval=TRUE}
+<<content_knn_evaluation_nearest_neighbors_plot>>
+```
+
 
 ## SVD++
 ## Hybridization
