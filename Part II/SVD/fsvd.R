@@ -1,10 +1,11 @@
 # source('packages.R')
 
 ## @knitr train_test_matrix
-###Get train and test matrix for recommenderlab
+### Get train and test rating matrix
 train_test_matrix <- function(training_data, testing_data, train_prop){
-  
-  all_ratings <- data.frame(bind_rows(training_data[,1:3],testing_data[,1:3]))
+  testing <- testing_data
+  testing[,3]<- rep(NA,nrow(testing))
+  all_ratings <- data.frame(bind_rows(training_data[,1:3],testing))
   names(all_ratings) <- c('msno','song_id','target')
   rating_matrix <- dcast(all_ratings, msno ~ song_id ,value.var = "target" , na.rm=FALSE)
   rownames(rating_matrix) <- unlist(rating_matrix[,1])#row indexed by msno
@@ -18,66 +19,91 @@ train_test_matrix <- function(training_data, testing_data, train_prop){
   
   return (list('rating_matrix'= rating_matrix, 'test_matrix'=test_matrix,'train_matrix'=train_matrix))
 }
+
+## @knitr train_predict
+### Predict real score and binary ratings using Funk SVD
+predict_svd <-function(fsvd_model, train_matrix, test_matrix) {
+  ### reconstruct the rating matrix as R = UV',get train error
+  predicted_train_prob <- tcrossprod(fsvd_model$U, fsvd_model$V)
+  predicted_train_binary <- ifelse(predicted_train_prob >=0.5,1,0)
+  dimnames(predicted_train_prob) <- dimnames(train_matrix)
+  dimnames(predicted_train_binary) <- dimnames(train_matrix)
+  train_rmse <- RMSE(train_matrix, predicted_train_binary)
+  ### Predict ratings for test data with Funk SVD model
+  predicted_test_prob <- predict(fsvd_model, test_matrix, verbose = TRUE)
+  dimnames(predicted_test_prob) <- dimnames(test_matrix)
+  predicted_test_binary <- ifelse(predicted_test_prob >=0.5,1,0)
+  dimnames(predicted_test_binary) <- dimnames(test_matrix)
+  return (list(predicted_train_prob, predicted_train_binary,train_rmse,predicted_test_prob,predicted_test_binary))
+}
+
+set.seed(123)
 train_prop = 0.8
 data <- train_test_matrix(training_data, testing_data, 0.8)
 train_matrix <- data$train_matrix
 test_matrix <- data$test_matrix
 
-## @knitr fsvd_model
+#saveRDS(data,"SVD/data/data")
+
+## @knitr fsvd_models
 #fsvd
-k= 10
-gamma = 0.015
-lambda = 0.001
-fsvd_model <- funkSVD(train_matrix, k = 10, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+k= c(5,8,10,20,30)
+gamma = 0.015 #learning rates
+lambda = 0.001 #regularization
+fsvd_model_5 <- funkSVD(train_matrix, k = 5, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+fsvd_model_8 <- funkSVD(train_matrix, k = 8, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+fsvd_model_10 <- funkSVD(train_matrix, k = 10, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+fsvd_model_20 <- funkSVD(train_matrix, k = 20, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+fsvd_model_30 <- funkSVD(train_matrix, k = 30, gamma = 0.015, lambda = 0.001,min_improvement = 1e-06, min_epochs = 50, max_epochs = 200, verbose = FALSE)
+fsvd_models <- list(fsvd_model_5,fsvd_model_8,fsvd_model_10,fsvd_model_20,fsvd_model_30)
 
-### reconstruct the rating matrix as R = UV'
-predicted_train_prob <- tcrossprod(fsvd_model$U, fsvd_model$V)
-predicted_train_binary <- ifelse(predicted_train >=0.5,1,0)
-dimnames(predicted_train_binary) <- dimnames(train_matrix)
+fsvd_model_5_result <- predict_svd(fsvd_model_5, train_matrix, test_matrix)
+fsvd_model_8_result <- predict_svd(fsvd_model_8, train_matrix, test_matrix)
+fsvd_model_10_result <- predict_svd(fsvd_model_10, train_matrix, test_matrix)
+fsvd_model_20_result <- predict_svd(fsvd_model_20, train_matrix, test_matrix)
+fsvd_model_30_result <- predict_svd(fsvd_model_30, train_matrix, test_matrix)
+fsvd_models_results <- list(fsvd_model_5_result,fsvd_model_8_result,fsvd_model_10_result,fsvd_model_20_result)
 
-## @knitr fsvd_prediction_error
-#RMSE for predicted training data using Funk SVD with k = 10
-train_err_rmse <- RMSE(train_matrix, predicted_train_binary)
-RMSE(train_matrix, predicted_train)
-
-#saveRDS(fsvd_model, "FSVD_info/fsvd_model.rds")
-#saveRDS(train_err_rmse, "FSVD_info/train_err_rmse.rds")
-
-## @knitr fsvd_predicted_test
-### Predict ratings for test data with Funk SVD model
-predicted_test_prob <- predict(fsvd_model, test_matrix, verbose = TRUE)
-dimnames(predicted_test_prob) <- dimnames(test_matrix)
-predicted_test_binary <- ifelse(predicted_test_prob >=0.5,1,0)
-dimnames(predicted_test_binary) <- dimnames(test_matrix)
-
-#saveRDS(predicted_test_prob, "FSVD_info/predicted_test_prob.rds")
-#saveRDS(predicted_test_binary, "FSVD_info/predicted_test_binary.rds")
+#saveRDS(fsvd_models, "SVD/FSVD_info/fsvd_models.rds")
+#saveRDS(fsvd_models_results, "SVD/FSVD_info/fsvd_models_results.rds")
 
 ## @knitr fsvd_results
+rmse_all <- c('k=5'= fsvd_model_5_result[[3]],'k=8'= fsvd_model_8_result[[3]],'k=10'= fsvd_model_10_result[[3]],'k=20'= fsvd_model_20_result[[3]],'k=30'= fsvd_model_30_result[[3]])
+rmse_all
+
 ### Get full rating matrix
-fsvd_full_rating_matrix <- rbind(predicted_train_binary,predicted_test_binary)
-fsvd_full_score_matrix <- rbind(predicted_train,predicted_test_prob)
+fsvd_full_rating_matrix <- rbind(fsvd_model_8_result[[2]],fsvd_model_8_result[[5]])
+fsvd_full_score_matrix <- rbind(fsvd_model_8_result[[1]],fsvd_model_8_result[[4]])
+#dimnames(fsvd_full_score_matrix) <- dimnames(data$rating_matrix)
+#dimnames(fsvd_full_rating_matrix) <- dimnames(data$rating_matrix)
+
 ### Test rating predictions
-FunkSVD_results = rep(0,nrow(testing_data))
-FunkSVD_scores = rep(0,nrow(testing_data))
+FunkSVD_results_8 = rep(0,nrow(testing_data))
+FunkSVD_scores_8 = rep(0,nrow(testing_data))
 for ( line in 1:nrow(testing_data)){
   uid = as.character(testing_data[line,]$msno)
   iid = as.character(testing_data[line,]$song_id)
-  FunkSVD_results[line] = fsvd_full_rating_matrix[uid,iid]
-  FunkSVD_scores[line] = fsvd_full_score_matrix[uid,iid]
+  FunkSVD_results_8[line] = fsvd_full_rating_matrix[uid,iid]
+  FunkSVD_scores_8[line] = fsvd_full_score_matrix[uid,iid]
 }
-testing_data$FunkSVD_results <- FunkSVD_results 
-testing_data$FunkSVD_scores <- FunkSVD_scores 
-fsvd_test_results <- testing_data[,c(1,2,3,6,8)]
-head(testing_data[,c(1,2,3,6,8)],10)
+testing_data$FunkSVD_results <- FunkSVD_results_8 
+testing_data$FunkSVD_scores <- FunkSVD_scores_8 
+fsvd_test_results <- testing_data[,c(1:3,6,7)]
+
+saveRDS(fsvd_test_results, "SVD/FSVD_info/fsvd_test_results.rds")
+
+## @knitr fsvd_sample_output
+head(fsvd_test_results,10)
+
+
 
 ## @knitr fsvd_prediction_error
 err=0
 for (k in 1:nrow(fsvd_test_results)){
-  err = err + abs(fsvd_test_results$FunkSVD_results[k] - fsvd_test_results$target[k])
+  err = err + abs(fsvd_test_results$FunkSVD_results_8[k] - fsvd_test_results$target[k])
 }
+#Error Rate
 err/nrow(fsvd_test_results)
 
-#saveRDS(fsvd_full_rating_matrix, "FSVD_info/full_results.rds")
-#saveRDS(fsvd_test_results, "FSVD_info/fsvd_test_results.rds")
+
 
