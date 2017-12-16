@@ -1,4 +1,12 @@
-# Collabortive Filter: Recommending Jokes
+# Music Recommendation - Hybrid Recommender System using Factorization Machines, Content Based Recommenders and SVD++ [Part II]
+In this project, we aim to predict the chances of a user listening to a song repetitively after the first observable listening event within a time window was triggered. If there are recurring listening event(s) triggered within a month after the user’s very first observable listening event, its target is marked 1, and 0 otherwise.   
+Our dataset come from a Kaggle competition, where KKBOX provides a training data set consisting of information of the first observable listening event for each unique user-song pair within a specific time duration. Metadata of each unique user and song pair is also provided.   
+
+## Full Report
+[READ THE REPORT HERE]
+
+
+# Collabortive Filter: Recommending Jokes [Part I]
 Recommender Systems are indispensable tools today to provide personalized user experience. In this project, we build and evaluate memory based and model based recommender systems for jokes. We will be using the recommenderlab package in R. However, we will also demonstrate brute force coding approach to collaborative filtering.
 
 ## Full Report
