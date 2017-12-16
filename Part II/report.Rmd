@@ -31,6 +31,7 @@ library(knitr)
 load('FM/FM.RData')
 source('Requirements.R')
 read_chunk('FM/factorization_machines.R')
+read_chunk('SVD/fsvd.R')
 read_chunk('Evaluation/Evaluation.R')
 read_chunk('content_based/libraries.R')
 read_chunk('content_based/read_filter.R')
@@ -492,8 +493,85 @@ We now have our items represented as feature vectors
 <<content_knn_evaluation_nearest_neighbors_plot>>
 ```
 
+## SVD
+### Model Summary:
 
-## SVD++
+We also explore Singular Value Decompositions to build our model. The SVD algorithm is a matrix factorization techinque to reduce the number of features in a dataset. For a large $M \times N$ user-item ratings matrix A of rank $r$, SVD model maps both users and items to a joint latent factor space of $k$ singular values by decomposing the ratings matrix and reducing its space dimensions from $r$ to $k$. The latent factor space tries to explain ratings by characterzing both items and users on factors automatically inferred from user feedback.
+
+The core formula for SVD matrix decomposition is:
+
+$A = U \Sigma V^T$ 
+
+where $\Sigma$ is the diagonal matrix of rank $k$ that contains the laten factors, $U$ and $V$ each represents the number of users and items.
+
+Here's an example of SVD dimensionality reduction with user movie ratings. To apply to our dataset, simply switch out movie genres with song categories. 
+![](SVD/example.png)
+
+The rule for predicting ratings $r_{ui}$ for each user-item pair with SVD is :
+
+$\hat{r}_{ui} = \mu + b_i + b_u + q_i^T p_u$
+
+where each item $i$ is represented by vector $q_i$ and each user $u$ is associated with vector $p_u$, $\mu$ is the average rating, $b_u$ and $b_i$ are user bias and item bias. 
+
+Our objective function for optimizing model paramters minimizes the regularized squared error:
+
+$\min_{b_u, b_i,q_i,p_u} \Sigma (r_ui -\mu - b_i - b_u - q_i^T p_u)^2 + \lambda (b_i^2 +b_u^2 +\|q_i\|^2 + \|p_u\|^2)$
+
+### Implementation using stochastics gradient descent (Funk SVD):
+
+The popular implementation method which we are use is optimizing the stochastic gradient descent. The method is first introduced by Simon Funk, hence the name Funk SVD. Since Funk SVD allows missing values in ratings matrix, it is suitable for our data set as the our matrix is quite sparese. Improved upon simple matrix decomposition, it allows us to include regularization term $\lambda(b_i^2 +b_u^2 +\|q_i\|^2 + \|p_u\|^2)$ and control its by $\lambda$. For each given rating $r_ui$ in the training data, we make prediction $\hat{r}_{ui}$ with reduced latent factors and calculate the prediction error $e_ui = r_ui - \hat{r}_{ui}$. We update the parameters based on the prediction error as follows:
+
+* $b_u \leftarrow b_u + \gamma  (e_{ui} - \lambda  b_u)$
+
+* $b_i \leftarrow b_u + \gamma  (e_{ui} - \lambda  b_i)$
+
+* $q_i \leftarrow q_i + \gamma  (e_{ui}  p_u - \lambda  q_i)$
+
+* $q_i \leftarrow q_i + \gamma  (e_{ui}  p_u - \lambda  q_i)$
+
+where $\gamma$ is learning rates, and $\lambda$ is regularization.
+
+### Our Model
+First, we convert our data into a $M \times N$ ratings matrix with all users and songs so that each element $r_{ui}$ represents whether user $u$ will listen to song $i$ again. For missing user-song pair, we replace it with NA. We also replace the known values in the orognal test data with NA so we can make our own predictions. Later on, we will be comparing model predictions with actual values in model evaluation. 
+
+Then we split the matrix into training and testing with a train proportion of 0.8.
+```{r}
+<<train_test_matrix>>
+```
+
+Then, we start training our models with the train matrix. For choosing the optimal paramter later, we use 5 different k values.
+```{r}
+<<fsvd_models>>
+```
+
+For each model, our prediction function outputs training error(RMSE), probability predictions, and binarized prediciton based on a threshold of 0.5 probability.
+```{r}
+<<train_predict>>
+```
+
+#### Tuning Parameter
+
+We test the SVD model with different number of latent factors $(k=5,8,10,20,40)$ and compared their training RMSE to choose the optimal one. Intuitively, more latent factors will output more accurate results, but we also take into account the training and prediction time, which varies significantly with different k values. 
+
+```{r}
+<<fsvd_results>>
+```
+From RSME and prediction accuracy, we can see that larger value of k will not improve the model significantly. Therefore, we choose the optimal value of k to be 10. 
+
+### Prediction Results and Evaluation
+Sample output:
+```{r}
+<<fsvd_sample_output>>
+```
+
+Accuray for testing data and evaluation results
+```{r}
+<<fsvd_prediction_error>>
+<<svd_evaluate_result>>
+```
+
+The final accuary for SVD approximation with k = 10 is 0.70.
+
 ## Hybridization
 ### Results
 ## Conclusion
