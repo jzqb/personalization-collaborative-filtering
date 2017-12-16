@@ -435,7 +435,7 @@ Finally, we evaluate the model according to the following metrics:
 * F1  
 * auc
   
-Additionally, we display an ROC curve for the predictions.
+Additionally, we display the confusion matrix and an ROC curve for the predictions.
 
 We start by writing a generic evaluation function, which we will use to compare the performance of different models:
 
@@ -453,6 +453,8 @@ Finally, we display the evaluation metrics and the ROC plot.
 <<evaluate_FM_print>>
 ```
 
+We find that the accuracy of approximately 0.7482 is well above that of user-based collarborative filtering (0.67), item-based collaborative filtering (0.71), and the random baseline model (0.63). Additionally, the recall for this model is quite good. Out of all of the observations in the testing dataset with target value 1, our model was able to retrieve 84.3% of them. This also indicates that the coverage of our model is quite good, since we are not only predicting a target value of 1 for the most popular songs and most active users. Still, our prediction accuracy might
+be affected by the popularity of the song and how active the user is. We explore these relationships in the following plots:
 
 ## Content Based Recommender
 In this section, we build the content based recommendation from scratch without using any ready to build package.   
@@ -496,9 +498,12 @@ We now have our items represented as feature vectors
 
 ## SVD
 ```{r, echo = FALSE}
-testing_data <- readRDS("SVD/data/testing_data.rds")
+#testing_data <- readRDS("SVD/data/testing_data.rds")
 fsvd_models <- readRDS("SVD/FSVD_info/fsvd_models.rds")
-fsvd_models_results<- readRDS("SVD/FSVD_info/fsvd_models_results.rds")
+fsvd_models_results1 <- readRDS("SVD/FSVD_info/fsvd_models_results1.rds")
+fsvd_models_results2 <- readRDS("SVD/FSVD_info/fsvd_models_results2.rds")
+fsvd_models_results3 <- readRDS("SVD/FSVD_info/fsvd_models_results3.rds")
+fsvd_models_results <- list(fsvd_models_results1[[1]], fsvd_models_results1[[2]], fsvd_models_results2[[1]], fsvd_models_results2[[2]], fsvd_models_results3)
 fsvd_test_results<- readRDS("SVD/FSVD_info/fsvd_test_results.rds")
 evaluation_result <- readRDS("SVD/FSVD_info/evaluation_result.rds")
 ```

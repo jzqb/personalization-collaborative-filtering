@@ -48,7 +48,7 @@ p
 
 
 ## @knitr cf_conf_matrices
-paste('Random Prediction Accuracy is: ', round(ubcf_accuracy,4))
+paste('Random Prediction Accuracy is: ', round(rand_accuracy,4))
 
 paste('Item-Based Collaborative Filter Accuracy is: ', round(ibcf_accuracy,4))
 print('IBCF Confusion Matrix')
