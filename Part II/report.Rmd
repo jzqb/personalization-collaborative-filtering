@@ -39,6 +39,7 @@ read_chunk('content_based/read_filter.R')
 read_chunk('content_based/feature_generation.R')
 read_chunk('content_based/collaborative_filter.R')
 read_chunk('content_based/knn.R')
+read_chunk('hybrid.R')
 options(tibble.print_max = 5, tibble.print_min = 5)
 ```
 
@@ -488,6 +489,14 @@ We now have our items represented as feature vectors
 ```{r,eval=FALSE}
 <<content_knn_prediction>>
 ```
+The overall accuracy for all neighbors included in the content based comes out to  be the following.
+```{r,eval=TRUE, echo=TRUE}
+<<content_knn_evaluation>>
+```
+We can see that increasing the number of neighbors in our knn-content based recommender, improves the accuracy. The following chart summarizes the accuracy of the content based recommender. We further discuss other accuracy measures in the conclusion.
+```{r,eval=TRUE, echo=TRUE}
+<<content_knn_evaluation_nearest_neighbors>>
+```
 
 ### Evaluation
 * We compare the content based model with the collaborative filter models and see that it is better than random prediction and outperforms user-based collaborative filtering, however, the number of neighbors in the knn model were restricted to 32, thus under performing item-based collaborative filter.
@@ -591,7 +600,58 @@ Accuray for testing data and evaluation results
 The final accuary for SVD approximation with k = 10 is 0.71. We will examine the details of the evaluation output when we compare this model to the others in the conclusion.
 
 ## Hybridization
-### Results
+* We take a novel approach to ensemble the outputs from Factorization Machines and SVD++ to design a deep neural network based recommender system and observe that it increases the accuracy of our predictions.
+* The scores from the SVD++ and Factorization Machines are taken and we treat it as a classification problem to obtain the hybrid recommendations for the songs.
+* We build the hybrid recommender model on the testing data part of the original data. We further split the original testing data into new train and test set to build our model.
+
+### Data Preparation
+
+```{r,eval=FALSE}
+<<hybrid_data_prep>>
+```
+
+Now our data looks like the following table:
+
+```{r,echo=FALSE, eval= TRUE}
+<<load_flat_hybrid_table>>
+```
+
+```{r,echo=TRUE, eval= TRUE}
+<<load_flat_hybrid_table_head>>
+```
+
+### Parameter Tuning
+We train our deep learning model on various net size and decay rate to come up with the best parameters
+
+```{r,eval=FALSE}
+<<training_neural_net>>
+```
+
+```{r,echo=FALSE, eval= TRUE}
+<<hybrid_training_accuracy_read>>
+```
+
+We can see the training accuracy for ur grid search and test our model with the best parameters that minimize the training error.
+
+```{r,echo=TRUE, eval= TRUE}
+<<hybrid_training_accuracy>>
+```
+
+### Accuracy
+We compare the accuracy against the factorization machine output and SVD++ output and see that there is slight improvement in the accuracy for the neural net hybrid recommender system. We further discuss our results in the next section.
+```{r,echo=FALSE, eval= TRUE}
+<<testing_accuracy_hybrid_read>>
+```
+
+
+```{r,echo=TRUE, eval= FALSE}
+<<testing_accuracy_hybrid>>
+```
+
+```{r,echo=TRUE, eval= TRUE}
+<<testing_accuracy_hybrid_comparison>>
+```
+
 ## Conclusion
 
 ### Model Comparison
