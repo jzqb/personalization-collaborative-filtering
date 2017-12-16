@@ -35,6 +35,7 @@ total_prediction_matrix$prediction <- as.numeric(as.character(total_prediction_m
 total_prediction_matrix$score[total_prediction_matrix$prediction == 0] <- 1 - total_prediction_matrix$score[total_prediction_matrix$prediction == 0]
 conf_matrix <- table(total_prediction_matrix$target, total_prediction_matrix$prediction)
 content_based_accuracy <- (conf_matrix[1,1]+conf_matrix[2,2])/sum(conf_matrix)
+content_based_accuracy
 
 ## @knitr content_knn_evaluation_nearest_neighbors
 accuracy_nn <- total_prediction_matrix[c('nn', 'target', 'prediction')]
@@ -42,6 +43,7 @@ accuracy_nn$diff <- abs(as.numeric(as.character(accuracy_nn$target)) - as.numeri
 accuracy_nn <- accuracy_nn %>% group_by(nn, diff) %>% summarise(count = n())
 accuracy_nn$accuracy <- accuracy_nn$count/mean(accuracy_nn$count)/2
 accuracy_nn <- subset(accuracy_nn, diff == 0)
+accuracy_nn
 
 
 

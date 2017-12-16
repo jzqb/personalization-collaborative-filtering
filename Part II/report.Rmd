@@ -1,5 +1,5 @@
 ---
-title: "Music Recommendation - Hybrid Recommender System using Factorization Machines, Content Based Recommenders and SVD++"
+title: "Music Recommendation - Hybrid Recommender System using Factorization Machines, Content Based Recommenders and SVD"
 subtitle: |
   Columbia University
   
@@ -605,8 +605,8 @@ Accuray for testing data and evaluation results
 The final accuary for SVD approximation with k = 10 is 0.71. We will examine the details of the evaluation output when we compare this model to the others in the conclusion.
 
 ## Hybridization
-* We take a novel approach to ensemble the outputs from Factorization Machines and SVD++ to design a deep neural network based recommender system and observe that it increases the accuracy of our predictions.
-* The scores from the SVD++ and Factorization Machines are taken and we treat it as a classification problem to obtain the hybrid recommendations for the songs.
+* We take a novel approach to ensemble the outputs from Factorization Machines and SVD to design a deep neural network based recommender system and observe that it increases the accuracy of our predictions.
+* The scores from the SVD and Factorization Machines are taken and we treat it as a classification problem to obtain the hybrid recommendations for the songs.
 * We build the hybrid recommender model on the testing data part of the original data. We further split the original testing data into new train and test set to build our model.
 
 ### Data Preparation
@@ -643,7 +643,7 @@ We can see the training accuracy for ur grid search and test our model with the 
 ```
 
 ### Accuracy
-We compare the accuracy against the factorization machine output and SVD++ output and see that there is slight improvement in the accuracy for the neural net hybrid recommender system. We further discuss our results in the next section.
+We compare the accuracy against the factorization machine output and SVD output and see that there is slight improvement in the accuracy for the neural net hybrid recommender system. We further discuss our results in the next section.
 ```{r,echo=FALSE, eval= TRUE}
 <<testing_accuracy_hybrid_read>>
 ```
@@ -658,8 +658,11 @@ We compare the accuracy against the factorization machine output and SVD++ outpu
 ```
 
 ## Conclusion
+* We built several state of the art recommender systems in this project, namely Item-Based Collaborative Filtering, User-Based Collaborative Fitlering, Factorization Machines, Content-Based Recommender System and SVD.
 
 ### Model Comparison
+* The following table summarizes the model accuracy metrics for all the recommender systems we built in the project.
+
 ```{r, echo=F}
 load('Evaluation/all_models_eval.RData')
 ```
@@ -671,5 +674,11 @@ load('Evaluation/all_models_eval.RData')
 ```{r}
 all_models_eval
 ```
+
+### Discussion
+* We also hybridised Factorization Machines and SVD models to improve the overall accuracy of the recommender, using deep neural networks.
+* The models are summarized in the following section, and we see that Factorization Machine outperform any single model. We compared the models against the random accuracy [predicting 1 for every user, which translates to recommending all songs to every user] and see that the algorithms are better than random prediction.
+* In content based recommender, we see that increasing the nearest neighbors in knn, increased the accuracy of the model, it is just over SVD performance. However, the cost of building content based recommender is very high, as each user had its own model that was bult based on the features of the songs preferred by him/her.
+* Upon hybridization, we can observe that the accuracy has slightly improve at the cost recall. The hybrid model has better precision, but lower recall compared to the FM Model.
 
 ## References
