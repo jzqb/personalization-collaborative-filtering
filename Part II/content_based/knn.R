@@ -29,13 +29,16 @@ for(active_user in user_key$msno){
 }
 
 ## @knitr content_knn_evaluation
-total_prediction_matrix <- read.csv('total_prediction_matrix.csv')
+total_prediction_matrix <- read_rds('content_based/total_prediction_matrix_update.rds')
+total_prediction_matrix$score <- as.numeric(as.character(total_prediction_matrix$prediction_prob))
+total_prediction_matrix$prediction <- as.numeric(as.character(total_prediction_matrix$prediction))
+total_prediction_matrix$score[total_prediction_matrix$prediction == 0] <- 1 - total_prediction_matrix$score[total_prediction_matrix$prediction == 0]
 conf_matrix <- table(total_prediction_matrix$target, total_prediction_matrix$prediction)
 content_based_accuracy <- (conf_matrix[1,1]+conf_matrix[2,2])/sum(conf_matrix)
 
 ## @knitr content_knn_evaluation_nearest_neighbors
 accuracy_nn <- total_prediction_matrix[c('nn', 'target', 'prediction')]
-accuracy_nn$diff <- abs(accuracy_nn$target -accuracy_nn$prediction)
+accuracy_nn$diff <- abs(as.numeric(as.character(accuracy_nn$target)) - as.numeric(as.character(accuracy_nn$prediction)))
 accuracy_nn <- accuracy_nn %>% group_by(nn, diff) %>% summarise(count = n())
 accuracy_nn$accuracy <- accuracy_nn$count/mean(accuracy_nn$count)/2
 accuracy_nn <- subset(accuracy_nn, diff == 0)
@@ -48,7 +51,7 @@ i <- round(ubcf_accuracy,2)
 j <- round(rand_accuracy,2)
 nn_plot <- ggplot(data=accuracy_nn, aes(x=nn, y=accuracy, group=1)) +
   geom_line(size=1.2)+
-  ggtitle('Error rate of knn-content recommender system against number of nearest neighbors. [CF for benchmarking]') +
+  ggtitle('Error rate of knn-content recommender system against number of \n nearest neighbors. [CF for benchmarking]') +
   geom_hline(aes(yintercept=h), colour="#BB0000", linetype="dashed") + 
   geom_text(aes(0, h, label = paste("ibcf: ",h), vjust = 1, hjust = 0), size = 3) + 
   geom_hline(aes(yintercept=i), colour="#E69F00", linetype="dashed") + 
