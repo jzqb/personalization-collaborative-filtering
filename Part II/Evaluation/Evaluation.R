@@ -76,3 +76,22 @@ model <- c('Hybrid', 'FM', 'Content', 'SVD', 'IBCF', 'UBCF')
 
 all_models_eval  <- cbind(model, all_models_eval)
 
+## @knitr song_acc_plot
+
+FM.test.data <- cbind(merged_testing, predFM.mcmc)
+
+FM.test.data %>% 
+  group_by(song_id) %>% 
+  summarize(count = n(), accuracy = sum(predFM.mcmc = target)/n()) %>%
+  group_by(count) %>% 
+  summarize(new_count = n(), avg_acc = mean(accuracy)) %>% 
+  rename(no_of_items = new_count, occurence = count) %>% 
+  arrange(desc(avg_acc)) %>% 
+  ggplot(aes(occurence, avg_acc)) +
+  geom_line(color='turquoise') +
+  geom_smooth(color='turquoise') +
+  labs(x = "Song Occurence",
+       y = "Accuracy",
+       title= "Song Occurence vs FM Predictive Accuracy") 
+
+  

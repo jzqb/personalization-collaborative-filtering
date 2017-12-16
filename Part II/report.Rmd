@@ -454,8 +454,13 @@ Finally, we display the evaluation metrics and the ROC plot.
 <<evaluate_FM_print>>
 ```
 
-We find that the accuracy of approximately 0.7482 is well above that of user-based collarborative filtering (0.67), item-based collaborative filtering (0.71), and the random baseline model (0.63). Additionally, the recall for this model is quite good. Out of all of the observations in the testing dataset with target value 1, our model was able to retrieve 84.3% of them. This also indicates that the coverage of our model is quite good, since we are not only predicting a target value of 1 for the most popular songs and most active users. Still, our prediction accuracy might
-be affected by the popularity of the song and how active the user is. We explore these relationships in the following plots:
+We find that the accuracy of approximately 0.7482 is well above that of user-based collarborative filtering (0.67), item-based collaborative filtering (0.71), and the random baseline model (0.63). Additionally, the recall for this model is fairly high. Out of all of the observations in the testing dataset with target value 1, our model was able to retrieve 84.3% of them. This also indicates that the coverage of our model is quite good, since we are not only predicting a target value of 1 for the most popular songs and most active users. Still, our prediction accuracy might be affected by the popularity of a given song. We explore this relationship in the following plot:
+
+```{r}
+<<song_acc_plot>>
+```
+
+There is a clear upward trend indicating that the FM model performs better on more popular songs.
 
 ## Content Based Recommender
 In this section, we build the content based recommendation from scratch without using any ready to build package.   
