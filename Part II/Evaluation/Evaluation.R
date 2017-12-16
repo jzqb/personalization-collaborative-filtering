@@ -50,3 +50,29 @@ evaluate <- function(scores, target){
   
   return(list(eval.metrics, conf.mat, roc))
 }
+
+
+## @knitr compare_models
+evaluate2 <- function(pred.target, target){
+  accuracy <- sum(pred.target == target)/length(target)
+  conf.mat <- table(pred.target, target, dnn = c("predicted","actual"))
+  precision <- conf.mat[2,2]/sum(conf.mat[2,])
+  recall <- conf.mat[2,2]/sum(conf.mat[,2])
+  F1 <- 2 * (precision*recall/(precision + recall))
+  eval.metrics <- data.frame(cbind(accuracy, precision, recall, F1))
+  return(eval.metrics)
+}
+
+all_models_eval <- rbind(
+  evaluate2(test_hybrid$hybrid_class, test_hybrid$target),
+  FM.eval[[1]][1:5], #fm
+  evaluate2(total_prediction_matrix[total_prediction_matrix$nn == 128, 'prediction'], 
+            total_prediction_matrix[total_prediction_matrix$nn == 128, 'target']), 
+  evaluation_result[[1]][1:5], #svd
+  evaluate2(results_ibcf$predicted_class, results_ibcf$target),
+  evaluate2(results_ubcf$predicted_class, results_ubcf$target)
+)
+model <- c('Hybrid', 'FM', 'Content', 'SVD', 'IBCF', 'UBCF')
+
+all_models_eval  <- cbind(model, all_models_eval)
+

@@ -115,9 +115,14 @@ for (k in 1:nrow(fsvd_test_results)){
 
 ## @knitr ignore-4
 evaluation_result <- evaluate(fsvd_test_results$FunkSVD_scores_10,testing_data$target)
+svd.roc.plot <- ggroc(evaluation_result[[3]], alpha = 0.5, colour = "blue", linetype = 2, size = 2) +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ## @knitr svd_evaluate_result
-evaluation_result
+evaluation_result[[1]] #print evaluation metrics
+evaluation_result[[2]] #print confusion matrix
+svd.roc.plot + ggtitle('ROC Curve for SVD Model') +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ## @knitr ignore-5
 #saveRDS(evaluation_result,"SVD/FSVD_info/evaluation_result.rds")

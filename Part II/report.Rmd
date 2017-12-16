@@ -506,6 +506,7 @@ fsvd_models_results3 <- readRDS("SVD/FSVD_info/fsvd_models_results3.rds")
 fsvd_models_results <- list(fsvd_models_results1[[1]], fsvd_models_results1[[2]], fsvd_models_results2[[1]], fsvd_models_results2[[2]], fsvd_models_results3)
 fsvd_test_results<- readRDS("SVD/FSVD_info/fsvd_test_results.rds")
 evaluation_result <- readRDS("SVD/FSVD_info/evaluation_result.rds")
+load("SVD/FSVD_info/svdroc.RData")
 ```
 ### Model Summary:
 
@@ -584,12 +585,26 @@ Accuray for testing data and evaluation results
 ```{r}
 #Prediction Accuracy
 <<fsvd_prediction_error>>
-evaluation_result
+<<svd_evaluate_result>>
 ```
 
-The final accuary for SVD approximation with k = 10 is 0.71.
+The final accuary for SVD approximation with k = 10 is 0.71. We will examine the details of the evaluation output when we compare this model to the others in the conclusion.
 
 ## Hybridization
 ### Results
 ## Conclusion
+
+### Model Comparison
+```{r, echo=F}
+load('Evaluation/all_models_eval.RData')
+```
+
+```{r, eval = FALSE}
+<<compare_models>>
+```
+
+```{r}
+all_models_eval
+```
+
 ## References
