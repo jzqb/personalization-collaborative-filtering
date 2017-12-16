@@ -65,10 +65,10 @@ evaluate2 <- function(pred.target, target){
 
 all_models_eval <- rbind(
   evaluate2(test_hybrid$hybrid_class, test_hybrid$target),
-  FM.eval[[1]][1:5], #fm
+  FM.eval[[1]][c(1,3:5)], 
   evaluate2(total_prediction_matrix[total_prediction_matrix$nn == 128, 'prediction'], 
             total_prediction_matrix[total_prediction_matrix$nn == 128, 'target']), 
-  evaluation_result[[1]][1:5], #svd
+  evaluation_result[[1]][c(1,3:5)], #svd
   evaluate2(results_ibcf$predicted_class, results_ibcf$target),
   evaluate2(results_ubcf$predicted_class, results_ubcf$target)
 )
@@ -93,5 +93,3 @@ FM.test.data %>%
   labs(x = "Song Occurence",
        y = "Accuracy",
        title= "Song Occurence vs FM Predictive Accuracy") 
-
-  

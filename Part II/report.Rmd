@@ -676,9 +676,10 @@ all_models_eval
 ```
 
 ### Discussion
-* We also hybridised Factorization Machines and SVD models to improve the overall accuracy of the recommender, using deep neural networks.
-* The models are summarized in the following section, and we see that Factorization Machine outperform any single model. We compared the models against the random accuracy [predicting 1 for every user, which translates to recommending all songs to every user] and see that the algorithms are better than random prediction.
-* In content based recommender, we see that increasing the nearest neighbors in knn, increased the accuracy of the model, it is just over SVD performance. However, the cost of building content based recommender is very high, as each user had its own model that was bult based on the features of the songs preferred by him/her.
-* Upon hybridization, we can observe that the accuracy has slightly improve at the cost recall. The hybrid model has better precision, but lower recall compared to the FM Model.
 
-## References
+* We also hybridised Factorization Machines and SVD models to improve the overall accuracy of the recommender, using deep neural networks.  
+* The models are summarized in the following section, and we see that the Factorization Machine model outperformed any single model. We compared the models against the random accuracy [predicting 1 for every user, which translates to recommending all songs to every user] and see that the algorithms are better than random prediction.  
+* In the content-based recommender, we see that increasing the nearest neighbors in knn, increased the accuracy of the model, it is just over SVD performance. However, the cost of building content based recommender is very high, as each user has its own model that is built based on the features of the songs preferred by him/her.  
+* Factorization machines have high recall but lack the precision of some of the other models. We also observe that the model performs better on songs that occur more times in the data, so future work could involve improving the accuracy on less popular songs. Additionally, we could explore field-aware factorization machines.  
+* Upon hybridization, we can observe that the accuracy improves slightly at the cost of recall. The hybrid model has better precision, but lower recall compared to the FM Model. 
+* In this study, our objective is to predict repeat listening events for user song pairs. Since we are not recommending items, per se, the concepts of novelty and serendipity are not applicable to our predictions. However, if our objective was instead to recommend songs to users, then we could update our content-based model to make novel recommendations by assigning different weights to variables in the item-feature space. This would allow us to construct new features which are a combination of likeable features for the particular user. This would be a good path to explore in future work.
