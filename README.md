@@ -16,18 +16,18 @@ Recommender Systems are indispensable tools today to provide personalized user e
 * Jokes can be used to as an affiliate to get traffic on a website. Everybody likes good humor and it might be a good idea to recommend “funny” jokes to the right people to generate more clicks on an online property which drives revenue.
 * The general idea of jokes (humor) can be extended to more profitable domains, like recommending books based on synposis/summary, music based on lyrics and movies based on summaries.
 
-## Built With
+# Built With
 * [R Studio](https://www.rstudio.com/) - IDE For R Programming
 * [Plotly](https://plot.ly/) - Interactive Plotting
 * [knitr](https://yihui.name/knitr/) - R Markdown
 
-## Authors
+# Authors
 
 * **Gaurav Singh**
 * **Carolyn Silverman**
 * **Cindy Wu**
 * **Maura Fitzgerald**
 
-## Acknowledgments
+# Acknowledgments
 
 * [Professor Brett Vintch](http://ieor.columbia.edu/brett-vintch)
